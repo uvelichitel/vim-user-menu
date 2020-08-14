@@ -122,6 +122,7 @@ func! VimPopMenuStart()
         call add( items, entry[0] )
     endfor
 
+    " Special actions needed for command mode.
     if mode() =~# '\v^c[ve]='
         if empty(b:user_menu_cmode_cmd)
             let b:user_menu_cmode_cmd = getcmdline()
@@ -160,15 +161,6 @@ func! VimUserMenuMain(id, something)
 endfunction
 " }}}
 
-"""""""""""""""""" THE SCRIPT BODY
-
-augroup VimPopMenuInitGroup
-    au FileType * call VimPopMenuInitFT()
-    au BufRead * call VimPopMenuInitBR()
-augroup END
-
-let [ g:ZOC_FUNC, g:ZOC_PARAM, g:ZOC_KEY, g:ZOC_LINE ] = [ 0, 1, 2, 3 ]
-
 """""""""""""""""" UTILITY FUNCTIONS
 
 func! Mapped(fn, l)
@@ -193,6 +185,13 @@ func! CreateEmptyList(name)
     eval("let ".a:name." = []")
 endfun
 
+"""""""""""""""""" THE SCRIPT BODY
+
+augroup VimPopMenuInitGroup
+    au FileType * call VimPopMenuInitFT()
+    au BufRead * call VimPopMenuInitBR()
+augroup END
+
 inoremap <expr> <F12> VimPopMenuStart()
 nnoremap <expr> <F12> VimPopMenuStart()
 vnoremap <expr> <F12> VimPopMenuStart()
@@ -200,7 +199,5 @@ vnoremap <expr> <F12> VimPopMenuStart()
 "cmap <expr> <F12> VimPopMenuStart()
 cmap <F12> <C-\>eVimPopMenuStart()<CR>
 onoremap <expr> <F12> VimPopMenuStart()
-
-let g:pm_idx = 0
 
 " vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
