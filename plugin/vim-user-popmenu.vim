@@ -29,9 +29,17 @@ let g:user_menu = [
 " The meaning of the dictionary keys:
 "
 " — The "type" is one of: "ex", "code", "other-item", "n-mapping", "i-mapping".
-" — The "{command body}" is either (a) an Ex command, like ":w" or "w", (b) an
-"   inline code, like, e.g.: "let g:var = 1", (c) an item text or ID of the
-"   other user menu entry, e.g.: "Ope n …" or "1".
+"
+" — The "{command body}" is either:
+"   — A Ex command, like ":w" or "w". Type: "ex" causes such command to be run.
+"   — An inline code, like, e.g.: "let g:var = 1". Type: "code".
+"   — An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
+"     Type "other-item" will cause the given other menu item to be run, only. 
+"   — An sequence of keys of a complex normal command. Type: "n-mapping" invokes
+"     the keys.
+"   — An sequence of keys of a complex insert-mode mapping. Type: "i-mapping"
+"     invokes the keys (feeds them to the editor) potentially causing various
+"     insert-mode mappings to trigger.
 "   
 " There are also some optional, advanced keys of the dictionary:
 " [ [ "…", #{ …,
@@ -48,6 +56,7 @@ let g:user_menu = [
 "   options: "keep-menu-open", "only-in-normal", "only-in-insert",
 "   "only-in-visual", "only-in-cmd", "only-in-sh", "always-show",
 "   "cancel-ex-cmd".
+"
 "   — The "keep-menu-open" option causes the menu to be reopened immediately
 "     after the selected command will finish executing.
 "   — The "only-in-…" options show the item only if the menu is started in the
@@ -61,14 +70,19 @@ let g:user_menu = [
 "     after the menu closes → right before executing the selected command; this
 "     allows to define a menu item that does something with the command, e.g.:
 "     quotes slashes within it).
+"
 " — The "text-or-id" is either the text of the other user-menu item (the one to
 "   chain-up/run after the edited item) or an ID of it.
+"
 " — The "start-message-text" is a message text to be shown *before* running the
 "   command. It can start with a special string: "hl:<HL-group>:…" to show the
 "   message in a specified color.
+"
 " — The "message-text" is a message text to be shown after running the command.
+"
 " — The "prompt-text" is a prompt-message text to be show when asking for the
 "   user input (which is then assigned to the g:user_menu_prompt_input).
+"
 " — The "additional command body" is an inline code (not a single Ex command) to
 "   be run immediately after executing the main body ↔ the main command part.
 " 
@@ -84,7 +98,7 @@ endfun
 " FUNCTION: UserMenu_EnsureInit() {{{
 func! UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
-        UserMenu_InitBufAdd()
+        call UserMenu_InitBufAdd()
         return 0
     endif
     return 1
@@ -101,7 +115,7 @@ endfun
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
     echohl Constant | echom "∞∞∞ UserMenu_Start ∞∞∞ Mode:" mode()
-                \ (!empty(b:user_menu_cmode_cmd) ? "××× Cmd: ".string(b:user_menu_cmode_cmd)." ×××" : "" )
+                \ (!empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ? "××× Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))." ×××" : "" )
     echohl None
 
     call UserMenu_EnsureInit()
@@ -141,11 +155,14 @@ func! UserMenu_Start()
 
     " Special actions needed for command mode.
     if mode() =~# '\v^c[ve]='
-        if empty(b:user_menu_cmode_cmd)
-            let b:user_menu_cmode_cmd = getcmdline()
+        if empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
+            call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", ':'.getcmdline())
+            call feedkeys("\<ESC>:\<F12>")
+            call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")[1:],"n")
+            return ''
         else
             " Ensure that no stray command will be left.
-            let b:user_menu_cmode_cmd = ""
+            call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
         endif
     endif
 
@@ -163,18 +180,18 @@ func! UserMenu_Start()
                 \ borderhighlight: [ 'Statement', 'Statement', 'Statement', 'Statement' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
                 " \ borderchars: ['—', '|', '—', '|', '┌', '┐', '┘', '└'],
-    redraw
+    redraw!
 
-    return b:user_menu_cmode_cmd
+    return UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
 endfun " }}}
 
 " FUNCTION: UserMenu_Main() {{{
 func! UserMenu_Main(id, something)
     " Should restore the command line?
-    if !empty(b:user_menu_cmode_cmd)
-        call feedkeys("\<ESC>:".b:user_menu_cmode_cmd,"n")
-        let b:user_menu_cmode_cmd = ''
+    if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
+        call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),"n")
     endif
+    call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
 endfunction
 " }}}
 
@@ -184,9 +201,9 @@ endfunction
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_GetBufOrSesVar(var_to_read)
     if exists("b:" . a:var_to_read)
-        return get( b:, var_to_read, '' )
+        return get( b:, a:var_to_read, '' )
     elseif exists("s:" . a:var_to_read)
-        return get( s:, var_to_read, '' )
+        return get( s:, a:var_to_read, '' )
     else
         echohl Error
         echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_read) "×"
@@ -199,13 +216,16 @@ endfun
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
     if exists("b:" . a:var_to_set)
-        return b:[a:var_to_set] = a:value_to_set
+        let b:[a:var_to_set] = a:value_to_set
+        return 1
     elseif exists("s:" . a:var_to_set)
-        return s:[a:var_to_set] = a:value_to_set
+        let s:[a:var_to_set] = a:value_to_set
+        return 2
     else
         echohl Error
         echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_set) "×"
         echohl None
+        return 0
     endif
 endfun
 " }}}
