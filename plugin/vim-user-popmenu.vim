@@ -229,7 +229,11 @@ func! UserMenu_MainCallback(id, result)
         return
     endif
 
-    " Got a valid selection.
+    " Output message before the command?
+    if has_key(it[1],'smessage') 
+        call s:msg(4,it[1]['smessage'])
+    endif
+
     " Read the attached action specification and perform it.
     if it[1]['type'] =~ '\v^(ex|cmd)$'
         exe ":".it[1]['body']
@@ -237,6 +241,10 @@ func! UserMenu_MainCallback(id, result)
         call s:msg(0, "Unrecognized item type ·", it[1]['type'], "·")
     endif
 
+    " Output message after the command?
+    if has_key(it[1],'message') 
+        call s:msg(4,it[1]['message'])
+    endif
 endfunction
 " }}}
 
