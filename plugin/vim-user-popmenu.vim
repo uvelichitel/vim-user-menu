@@ -2,7 +2,8 @@ let g:user_menu = [
             \ [ "Save", #{ type: 'ex', body: ':w', opts: "only-in-insert,always-something" } ],
             \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal" } ],
             \ [ "Open …", #{ type: 'ex', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show"} ]
+            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show"} ],
+            \ [ "∧∧ YET another… ∧∧", #{ type: 'ex', body: 'Ex', opts: "always-show"} ]
             \ ]
 
 " ·•« User Menu Plugin »•· ·•« zphere-zsh/vim-user-popmenu »•·
@@ -72,22 +73,38 @@ let g:user_menu = [
 "   be run immediately after executing the main body ↔ the main command part.
 " 
 
-" FUNCTION: VimPopMenuInitFT()
-" A function that's called when the filetype of the buffer is known.
-func! VimPopMenuInitFT()
-endfun
-
-" FUNCTION: VimPopMenuInitBR()
-" A funcion that's called when the buffer is loaded.
-func! VimPopMenuInitBR()
+" FUNCTION: UserMenu_InitFT() {{{
+" A function that's called when a new buffor is created.
+func! UserMenu_InitBufAdd() 
     let b:user_menu_cmode_cmd = ""
+    echom "→→→ au UserMenu_InitBufAdd"
 endfun
+" }}}
 
-" FUNCTION: VimPopMenuStart() {{{
-func! VimPopMenuStart()
-    echohl Constant | echom "∞∞∞ VimPopMenuStart ∞∞∞ Mode:" mode()
+" FUNCTION: UserMenu_EnsureInit() {{{
+func! UserMenu_EnsureInit()
+    if !exists("b:user_menu_cmode_cmd")
+        UserMenu_InitBufAdd()
+        return 0
+    endif
+    return 1
+endfun
+" }}}
+
+" FUNCTION: UserMenu_InitFileType() {{{
+" A funcion that's called when the buffer is loaded.
+func! UserMenu_InitFileType()
+    call UserMenu_InitBufAdd()
+endfun
+" }}}
+
+" FUNCTION: UserMenu_Start() {{{
+func! UserMenu_Start()
+    echohl Constant | echom "∞∞∞ UserMenu_Start ∞∞∞ Mode:" mode()
                 \ (!empty(b:user_menu_cmode_cmd) ? "××× Cmd: ".string(b:user_menu_cmode_cmd)." ×××" : "" )
     echohl None
+
+    call UserMenu_EnsureInit()
 
     let menu = g:user_menu
     let items = []
@@ -133,7 +150,7 @@ func! VimPopMenuStart()
     endif
 
     call popup_menu( items, #{ 
-                \ callback: 'VimUserMenuMain',
+                \ callback: 'UserMenu_Main',
                 \ time: 20000,
                 \ border: [ ],
                 \ fixed: 0,
@@ -151,8 +168,8 @@ func! VimPopMenuStart()
     return b:user_menu_cmode_cmd
 endfun " }}}
 
-" FUNCTION: VimUserMenuMain() {{{
-func! VimUserMenuMain(id, something)
+" FUNCTION: UserMenu_Main() {{{
+func! UserMenu_Main(id, something)
     " Should restore the command line?
     if !empty(b:user_menu_cmode_cmd)
         call feedkeys("\<ESC>:".b:user_menu_cmode_cmd,"n")
@@ -161,7 +178,41 @@ func! VimUserMenuMain(id, something)
 endfunction
 " }}}
 
-"""""""""""""""""" UTILITY FUNCTIONS
+"""""""""""""""""" HELPER FUNCTIONS {{{
+
+" FUNCTION: UserMenu_GetBufOrSesVar() {{{
+" Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
+func! UserMenu_GetBufOrSesVar(var_to_read)
+    if exists("b:" . a:var_to_read)
+        return get( b:, var_to_read, '' )
+    elseif exists("s:" . a:var_to_read)
+        return get( s:, var_to_read, '' )
+    else
+        echohl Error
+        echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_read) "×"
+        echohl None
+    endif
+endfun
+" }}}
+
+" FUNCTION: UserMenu_SetBufOrSesVar() {{{
+" Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
+func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
+    if exists("b:" . a:var_to_set)
+        return b:[a:var_to_set] = a:value_to_set
+    elseif exists("s:" . a:var_to_set)
+        return s:[a:var_to_set] = a:value_to_set
+    else
+        echohl Error
+        echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_set) "×"
+        echohl None
+    endif
+endfun
+" }}}
+
+"""""""""""""""""" THE END OF THE HELPER FUNCTIONS }}}
+
+"""""""""""""""""" UTILITY FUNCTIONS {{{
 
 func! Mapped(fn, l)
     let new_list = deepcopy(a:l)
@@ -185,19 +236,23 @@ func! CreateEmptyList(name)
     eval("let ".a:name." = []")
 endfun
 
-"""""""""""""""""" THE SCRIPT BODY
+"""""""""""""""""" THE END OF THE UTILITY FUNCTIONS }}}
 
-augroup VimPopMenuInitGroup
+"""""""""""""""""" THE SCRIPT BODY {{{
+
+augroup UserMenu_InitGroup
     au!
-    au FileType * call VimPopMenuInitFT()
-    au BufRead * call VimPopMenuInitBR()
+    au BufAdd * call UserMenu_InitBufAdd()
+    au BufRead * call UserMenu_InitFileType()
 augroup END
 
-inoremap <expr> <F12> VimPopMenuStart()
-nnoremap <expr> <F12> VimPopMenuStart()
-vnoremap <expr> <F12> VimPopMenuStart()
-cmap <F12> <C-\>eVimPopMenuStart()<CR>
+inoremap <expr> <F12> UserMenu_Start()
+nnoremap <expr> <F12> UserMenu_Start()
+vnoremap <expr> <F12> UserMenu_Start()
+cmap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
-onoremap <expr> <F12> VimPopMenuStart()
+onoremap <expr> <F12> UserMenu_Start()
+
+"""""""""""""""""" THE END OF THE SCRIPT BODY }}}
 
 " vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
