@@ -164,11 +164,14 @@ func! UserMenu_Start()
     endfor
 
     " Special actions needed for command mode.
-    if mode() =~# '\v^c[ve]='
+    if mode() =~# '\v^c[ve]=' && UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode") != 1
         if empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
             call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", ':'.getcmdline())
-            call feedkeys("\<ESC>:\<F12>")
-            call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")[1:],"n")
+            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
+            call feedkeys("\<ESC>:","n")
+            call feedkeys("\<F12>")
+            call s:msg(4,"Setting command line to:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
+            call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."<CR>'","n")
             return ''
         else
             " Ensure that no stray command will be left.
@@ -178,6 +181,8 @@ func! UserMenu_Start()
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
+                \ filter: 'UserMenu_KeyFilter',
+                \ filtermode: "a",
                 \ time: 20000,
                 \ border: [ ],
                 \ fixed: 0,
@@ -190,7 +195,7 @@ func! UserMenu_Start()
                 \ borderhighlight: [ 'Statement', 'Statement', 'Statement', 'Statement' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
                 " \ borderchars: ['—', '|', '—', '|', '┌', '┐', '┘', '└'],
-    redraw!
+    redraw
 
     return UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
 endfunc " }}}
@@ -237,6 +242,26 @@ endfunction
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
+" FUNCTION: UserMenu_KeyFilter() {{{
+func! UserMenu_KeyFilter(id,key)
+    redraw
+    let mode = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
+    if mode > 0
+        if a:key == "\<CR>"
+            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 0)
+            call s:msg(3, mode(), "←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode",
+                        \ mode,"···")
+        endif
+        " Don't consume the key.
+        return 0
+    else
+        let result = popup_filter_menu(a:id, a:key)
+        call s:msg(3, mode(), "←←←", a:key, "→→→ filter °°° user_menu_init_cmd_mode",
+                    \ mode, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
+
+        return (mode() =~# '\v^c[ve]=') ? 1 : result
+    endif
+endfunc " }}}
 " FUNCTION: s:msg(hl,...) {{{
 " 0 - error         LLEV=0 will show only them
 " 1 - warning       LLEV=1
