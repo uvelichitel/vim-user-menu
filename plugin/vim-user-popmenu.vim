@@ -306,10 +306,12 @@ endfunc
 " FUNCTION: UserMenu_SetBufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
+    let b:[a:var_to_set] = a:value_to_set
     if exists("b:" . a:var_to_set)
         let b:[a:var_to_set] = a:value_to_set
         return 1
-    elseif exists("s:" . a:var_to_set)
+    " FIXME
+    elseif 0 || exists("s:" . a:var_to_set)
         let s:[a:var_to_set] = a:value_to_set
         return 2
     else
