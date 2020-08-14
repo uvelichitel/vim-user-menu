@@ -73,16 +73,23 @@ let g:user_menu = [
 " 
 
 " FUNCTION: VimPopMenuInitFT()
-" A fun that's called when the buffer is loaded and its filetype is known.
-" It initializes the omni completion for the buffer.
+" A function that's called when the filetype of the buffer is known.
 func! VimPopMenuInitFT()
+endfun
+
+" FUNCTION: VimPopMenuInitBR()
+" A funcion that's called when the buffer is loaded.
+func! VimPopMenuInitBR()
+    let b:user_menu_cmode_cmd = ""
 endfun
 
 " FUNCTION: VimPopMenuStart() {{{
 func! VimPopMenuStart()
-    echohl Constant | echom "∞∞∞ VimPopMenuStart ∞∞∞ Mode:" mode()
-                \ (!empty(s:cmode_cmd) ? "××× Cmd: ".string(s:cmode_cmd)." ×××" : "" ) |
-                \ echohl None
+    if 0
+        echohl Constant | echom "∞∞∞ VimPopMenuStart ∞∞∞ Mode:" mode()
+                    \ (!empty(b:user_menu_cmode_cmd) ? "××× Cmd: ".string(b:user_menu_cmode_cmd)." ×××" : "" ) |
+                    \ "echohl None
+    endif
 
     let menu = g:user_menu
     let items = []
@@ -119,32 +126,39 @@ func! VimPopMenuStart()
 
     " TODO: Can the menu operate *in* command mode?
     if mode() =~# '\v^c[ve]='
-        if empty(s:cmode_cmd)
-            let s:cmode_cmd = getcmdline()
-            call feedkeys("\<C-U>\<ESC>\<F12>","")
+        if empty(b:user_menu_cmode_cmd)
+            let b:user_menu_cmode_cmd = getcmdline()
         else
             " Ensure that no stray command will be left.
-            let s:cmode_cmd = ""
+            let b:user_menu_cmode_cmd = ""
         endif
-        return ''
     endif
 
     call popup_menu( items, #{ 
                 \ callback: 'VimUserMenuMain',
+                \ time: 20000,
                 \ border: [ ],
                 \ fixed: 0,
+                \ flip: 1,
+                \ title: ' VIM User Menu ',
+                \ drag: 1,
+                \ resize: 1,
+                \ close: 'button',
+                \ highlight: 'Constant',
+                \ borderhighlight: [ 'Statement', 'Statement', 'Statement', 'Statement' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
+                " \ borderchars: ['—', '|', '—', '|', '┌', '┐', '┘', '└'],
     redraw
 
-    return ''
+    return b:user_menu_cmode_cmd
 endfun " }}}
 
 " FUNCTION: VimUserMenuMain() {{{
 func! VimUserMenuMain(id, something)
     " Should restore the command line?
-    if !empty(s:cmode_cmd)
-        call feedkeys("\<ESC>:".s:cmode_cmd,"n")
-        let s:cmode_cmd = ''
+    if !empty(b:user_menu_cmode_cmd)
+        call feedkeys("\<ESC>:".b:user_menu_cmode_cmd,"n")
+        let b:user_menu_cmode_cmd = ''
     endif
 endfunction
 " }}}
@@ -153,6 +167,7 @@ endfunction
 
 augroup VimPopMenuInitGroup
     au FileType * call VimPopMenuInitFT()
+    au BufRead * call VimPopMenuInitBR()
 augroup END
 
 let [ g:ZOC_FUNC, g:ZOC_PARAM, g:ZOC_KEY, g:ZOC_LINE ] = [ 0, 1, 2, 3 ]
