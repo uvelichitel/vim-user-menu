@@ -188,6 +188,7 @@ endfun
 """""""""""""""""" THE SCRIPT BODY
 
 augroup VimPopMenuInitGroup
+    au!
     au FileType * call VimPopMenuInitFT()
     au BufRead * call VimPopMenuInitBR()
 augroup END
