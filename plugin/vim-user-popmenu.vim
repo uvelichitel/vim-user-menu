@@ -197,6 +197,20 @@ endfunction
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
+" FUNCTION: s:msg(hl,...) {{{
+func! s:msg(hl, ...)
+    exe 'echohl ' . a:hl
+    echom join(a:000)
+    echohl None 
+endfun
+" }}}
+
+" FUNCTION: Msg(hl, ...) {{{
+func! Msg(hl, ...)
+    call s:msg(a:hl, join(a:000))
+endfun
+" }}}
+
 " FUNCTION: UserMenu_GetBufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_GetBufOrSesVar(var_to_read)
