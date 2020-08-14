@@ -85,11 +85,9 @@ endfun
 
 " FUNCTION: VimPopMenuStart() {{{
 func! VimPopMenuStart()
-    if 0
-        echohl Constant | echom "∞∞∞ VimPopMenuStart ∞∞∞ Mode:" mode()
-                    \ (!empty(b:user_menu_cmode_cmd) ? "××× Cmd: ".string(b:user_menu_cmode_cmd)." ×××" : "" ) |
-                    \ "echohl None
-    endif
+    echohl Constant | echom "∞∞∞ VimPopMenuStart ∞∞∞ Mode:" mode()
+                \ (!empty(b:user_menu_cmode_cmd) ? "××× Cmd: ".string(b:user_menu_cmode_cmd)." ×××" : "" )
+    echohl None
 
     let menu = g:user_menu
     let items = []
@@ -124,7 +122,6 @@ func! VimPopMenuStart()
         call add( items, entry[0] )
     endfor
 
-    " TODO: Can the menu operate *in* command mode?
     if mode() =~# '\v^c[ve]='
         if empty(b:user_menu_cmode_cmd)
             let b:user_menu_cmode_cmd = getcmdline()
