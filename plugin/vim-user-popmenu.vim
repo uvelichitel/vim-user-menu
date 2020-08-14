@@ -196,9 +196,8 @@ augroup END
 inoremap <expr> <F12> VimPopMenuStart()
 nnoremap <expr> <F12> VimPopMenuStart()
 vnoremap <expr> <F12> VimPopMenuStart()
-" Following 2 don't work as expected…'
-"cmap <expr> <F12> VimPopMenuStart()
 cmap <F12> <C-\>eVimPopMenuStart()<CR>
+" Following doesn't work as expected…'
 onoremap <expr> <F12> VimPopMenuStart()
 
 " vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
