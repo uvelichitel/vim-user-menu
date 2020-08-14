@@ -335,6 +335,25 @@ cmap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
 onoremap <expr> <F12> UserMenu_Start()
 
+hi def um_norm ctermfg=7
+hi def um_blue ctermfg=27
+hi def um_blue1 ctermfg=32
+hi def um_blue2 ctermfg=75
+hi def um_lblue ctermfg=50
+hi def um_lblue2 ctermfg=75 cterm=bold
+hi def um_orange ctermfg=172
+hi def um_gold ctermfg=220
+hi def um_yellow ctermfg=190
+hi def um_lyellow ctermfg=yellow cterm=bold
+hi def um_lyellow2 ctermfg=221
+hi def um_lyellow3 ctermfg=226
+hi def um_green ctermfg=green
+hi def um_lgreen ctermfg=lightgreen
+hi def um_green2 ctermfg=34
+hi def um_lgreen2 ctermfg=82
+hi def um_green3 ctermfg=40
+hi def um_orange ctermfg=172
+
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
 
 " vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
