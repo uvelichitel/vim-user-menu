@@ -170,7 +170,7 @@ func! UserMenu_Start()
             call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
             call feedkeys("\<ESC>:","n")
             call feedkeys("\<F12>")
-            call s:msg(5,"Setting command line to:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
+            call s:msg(5,"Setting command line to •⟼ appear ⟻• as:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
             call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."'\<CR>","n")
             return ''
         else
@@ -238,7 +238,7 @@ func! UserMenu_MainCallback(id, result)
     if it[1]['type'] =~ '\v^(ex|cmd)$'
         exe ":".it[1]['body']
     else
-        call s:msg(0, "Unrecognized item type ·", it[1]['type'], "·")
+        call s:msg(0, "Unrecognized ·item·: type ⟸", it[1]['type'], "⟹")
     endif
 
     " Output message after the command?
