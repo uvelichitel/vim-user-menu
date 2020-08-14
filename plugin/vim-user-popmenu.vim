@@ -2,7 +2,7 @@ let g:user_menu = [
             \ [ "Save", #{ type: 'ex', body: ':w', opts: "only-in-insert,always-something" } ],
             \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal" } ],
             \ [ "Open …", #{ type: 'ex', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show"} ],
+            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show", message: "hl:LineNr:Started the file explorer."} ],
             \ [ "∧∧ YET another… ∧∧", #{ type: 'ex', body: 'Ex', opts: "always-show"} ]
             \ ]
 
@@ -95,8 +95,7 @@ func! UserMenu_InitBufAdd()
     let b:user_menu_cmode_cmd = ""
     let s:current_menu = {}
     let s:current_menu[bufnr()] = []
-    echom "→→→ au UserMenu_InitBufAdd"
-endfun
+endfunc
 " }}}
 
 " FUNCTION: UserMenu_EnsureInit() {{{
@@ -106,14 +105,14 @@ func! UserMenu_EnsureInit()
         return 0
     endif
     return 1
-endfun
+endfunc
 " }}}
 
 " FUNCTION: UserMenu_InitFileType() {{{
 " A funcion that's called when the buffer is loaded.
 func! UserMenu_InitFileType()
     call UserMenu_InitBufAdd()
-endfun
+endfunc
 " }}}
 
 " FUNCTION: UserMenu_Start() {{{
@@ -195,15 +194,52 @@ func! UserMenu_Start()
     redraw!
 
     return UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
-endfun " }}}
+endfunc " }}}
 
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
+    " Carefully establish the selection.
+    let [it,got_it] = [ [ "", {} ], 0 ]
+    if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
+        let [it,got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
+    endif
+
+    " Important, base debug log.
+    echohl Error
+    echom "⟁⟁ MainCallback ⟁⟁ °id° ≈≈" a:result "←·→" (got_it ?
+                \ string(it[0])." ←·→ TPE ·".it[1]['type']."· BDY ·".it[1]['body']."·" : "≠")
+    echohl None
+
     " Should restore the command line?
     if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
         call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),"n")
     endif
     call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
+
+    " The menu has been canceled? (ESC, ^C, cursor move)
+    if !got_it
+        if a:result > len(a:result)
+            echohl Error
+            echom "Error: the index is too large →→ •••" a:result ">" len(s:current_menu) "•••"
+            echohl None
+        endif
+
+        return
+    endif
+
+    " Got a valid selection.
+    " Read the attached action specification and perform it.
+    if it['type'] =~ '\v^(ex|cmd)$'
+        echohl Constant
+        echom "Running ·ex· command · :" . it[1]['body'] . " ·"
+        echohl None
+        exe ":".it[1]['body']
+    else
+        echohl Error
+        echom "Unrecognized item type ·" it[1]['type'] "·"
+        echohl None
+    endif
+
 endfunction
 " }}}
 
@@ -214,13 +250,13 @@ func! s:msg(hl, ...)
     exe 'echohl ' . a:hl
     echom join(a:000)
     echohl None 
-endfun
+endfunc
 " }}}
 
 " FUNCTION: Msg(hl, ...) {{{
 func! Msg(hl, ...)
     call s:msg(a:hl, join(a:000))
-endfun
+endfunc
 " }}}
 
 " FUNCTION: UserMenu_GetBufOrSesVar() {{{
@@ -235,7 +271,7 @@ func! UserMenu_GetBufOrSesVar(var_to_read)
         echom "·• Warning •· →→ non-existent parameter given: ⟁" string(a:var_to_read) "⟁"
         echohl None
     endif
-endfun
+endfunc
 " }}}
 
 " FUNCTION: UserMenu_SetBufOrSesVar() {{{
@@ -253,7 +289,7 @@ func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
         echohl None
         return 0
     endif
-endfun
+endfunc
 " }}}
 
 """""""""""""""""" THE END OF THE HELPER FUNCTIONS }}}
@@ -264,23 +300,23 @@ func! Mapped(fn, l)
     let new_list = deepcopy(a:l)
     call map(new_list, string(a:fn) . '(v:val)')
     return new_list
-endfun
+endfunc
 
 func! Filtered(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, string(a:fn) . '(v:val)')
     return new_list
-endfun
+endfunc
 
 func! FilteredNot(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, '!'.string(a:fn) . '(v:val)')
     return new_list
-endfun
+endfunc
 
 func! CreateEmptyList(name)
     eval("let ".a:name." = []")
-endfun
+endfunc
 
 """""""""""""""""" THE END OF THE UTILITY FUNCTIONS }}}
 
