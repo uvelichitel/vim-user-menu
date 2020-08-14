@@ -279,19 +279,39 @@ endfunc " }}}
 " 5 - debug2        …
 func! s:msg(hl, ...)
     " Log only warnings and errors by default.
-    if a:hl > get(g:,'user_menu_log_level', 1)
+    if a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
         return
     endif
-    let c = ["ErrorMsg", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
-    let mres = matchlist(a:000[0],'\v^hl:([^:]*):(.*)$')
-    let [hl,a1] = !empty(mres) ? mres[1:2] : [ "", a:000[0] ]
-    let hl = !empty(hl) ? hl : c[a:hl]
+
+    " Make a copy of the input.
+    let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
+    let hl = a:hl
+
+    " Expand any variables.
+    for idx in range(len(args))
+        if args[idx] =~# '\v^[[:space:]]*[slgab]:[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*$'
+            let args[idx] = eval(args[idx])
+        endif
+    endfor
+
+    " Finally: detect any hl:…: prefix, select the color, output the message.
+    let c = ["Error", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
+    let mres = matchlist(args[0],'\v^hl:([^:]*):(.*)$')
+    let [hl,a1] = !empty(mres) ? [ (mres[1] =~# '^\d\+$' ? c[mres[1]] : mres[1]), mres[2] ]
+                \ : [ c[hl], args[0] ]
+    let hl = (hl !~# '\v^(\d+|um_[a-z0-9]+|WarningMsg|Error)$') ? 'um_'.hl : hl
     exe 'echohl ' . hl
-    echom join(flatten(a:0 > 1 ? [a1,a:000[1:]] : [a1]))
+    echom join( flatten( ( len(args) > 1 ) ? [a1,args[1:]] : [a1]) )
     echohl None 
 endfunc
 " }}}
 
+" FUNCTION: s:msgcmdimpl(hl,...) {{{
+func! s:msgcmdimpl(hl, bang, ...)
+    let hl = !empty(a:bang) ? 0 : a:hl
+    call s:msg(hl, a:000)
+endfunc
+" }}}
 " FUNCTION: Msg(hl, ...) {{{
 func! Msg(hl, ...)
     call s:msg(a:hl, join(a:000))
@@ -371,7 +391,7 @@ vnoremap <expr> <F12> UserMenu_Start()
 cmap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
 onoremap <expr> <F12> UserMenu_Start()
-
+command! -nargs=+ -count=4 -bang -bar UMsg call s:msgcmdimpl(<count>,<q-bang>,<f-args>)
 hi def um_norm ctermfg=7
 hi def um_blue ctermfg=27
 hi def um_blue1 ctermfg=32
