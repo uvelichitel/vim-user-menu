@@ -114,8 +114,10 @@ endfun
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
-    echohl Constant | echom "∞∞∞ UserMenu_Start ∞∞∞ Mode:" mode()
-                \ (!empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ? "××× Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))." ×××" : "" )
+    echohl Constant
+    echom "⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode:" mode()
+                \ (!empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ? 
+                \ "←·→ Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) : "" )
     echohl None
 
     call UserMenu_EnsureInit()
@@ -220,7 +222,7 @@ func! UserMenu_GetBufOrSesVar(var_to_read)
         return get( s:, a:var_to_read, '' )
     else
         echohl Error
-        echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_read) "×"
+        echom "·• Warning •· →→ non-existent parameter given: ⟁" string(a:var_to_read) "⟁"
         echohl None
     endif
 endfun
@@ -237,7 +239,7 @@ func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
         return 2
     else
         echohl Error
-        echom "·• Warning •· →→ non-existent parameter given: ×" string(a:var_to_set) "×"
+        echom "·• Warning •· →→ non-existent parameter given: ⟁" string(a:var_to_set) "⟁"
         echohl None
         return 0
     endif
