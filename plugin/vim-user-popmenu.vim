@@ -171,7 +171,7 @@ func! UserMenu_Start()
             call feedkeys("\<ESC>:","n")
             call feedkeys("\<F12>")
             call s:msg(4,"Setting command line to:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
-            call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."<CR>'","n")
+            call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."'\<CR>","n")
             return ''
         else
             " Ensure that no stray command will be left.
