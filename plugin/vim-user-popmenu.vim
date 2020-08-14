@@ -101,6 +101,7 @@ endfunc
 " FUNCTION: UserMenu_EnsureInit() {{{
 func! UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
+        2UMsg No \b:var detected ⟵⟶ calling: ➤➤➤ ☛ \UserMenu_InitBufAdd() ☚…
         call UserMenu_InitBufAdd()
         return 0
     endif
@@ -164,26 +165,18 @@ func! UserMenu_Start()
     endfor
 
     " Special actions needed for command mode.
-    if mode() =~# '\v^c[ve]=' && UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode") != 1
-        if empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
-            call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", ':'.getcmdline())
-            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
-            call feedkeys("\<ESC>:","n")
-            call feedkeys("\<F12>")
-            call s:msg(5,"Setting command line to •⟼ appear ⟻• as:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
-            call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."'\<CR>","n")
-            return ''
-        else
-            " Ensure that no stray command will be left.
-            call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
-        endif
+    if mode() =~# '\v^c[ve]='
+        call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", ':'.getcmdline())
+        call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
+        call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode_once", "once")
+        call feedkeys("\<Up>","n")
     endif
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
-                \ filtermode: "a",
-                \ time: 20000,
+                \ filtermode: "nvxsoilca",
+                \ time: 30000,
                 \ border: [ ],
                 \ fixed: 0,
                 \ flip: 1,
@@ -194,10 +187,9 @@ func! UserMenu_Start()
                 \ highlight: 'Constant',
                 \ borderhighlight: [ 'Statement', 'Statement', 'Statement', 'Statement' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
-                " \ borderchars: ['—', '|', '—', '|', '┌', '┐', '┘', '└'],
     redraw
 
-    return UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
+    return 'echo "'.escape(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),'"')."\""
 endfunc " }}}
 
 " FUNCTION: UserMenu_MainCallback() {{{
@@ -215,7 +207,9 @@ func! UserMenu_MainCallback(id, result)
 
     " Should restore the command line?
     if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
-        call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),"n")
+        " TODO: restoring
+        let @@ = UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")[1:]
+        call feedkeys("\<C-U>:\<C-bslash>e@@\<CR>","n")
     endif
     call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
 
@@ -253,23 +247,30 @@ endfunction
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
     redraw
-    let mode = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
-    if mode > 0
+    let s:mode = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
+    if s:mode > 0
         if a:key == "\<CR>"
             call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 0)
             call s:msg(3, mode(), "←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode",
-                        \ mode,"···")
+                        \ s:mode,"···")
+        elseif UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode_once") == "once"
+            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode_once", "already-ran")
+            UMsg Setting command line to •⟼ appear ⟻• as:
+                        \ UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
+            call feedkeys("\<CR>","n")
         endif
-        " Don't consume the key.
-        return 0
+        call timer_start(250, function("s:redraw"))
+        " Don't consume the key — pass it through, unless it's <Up>.
+        return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let result = popup_filter_menu(a:id, a:key)
         call s:msg(3, mode(), "←←←", a:key, "→→→ filter °°° user_menu_init_cmd_mode",
-                    \ mode, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
+                    \ s:mode, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
 
         return (mode() =~# '\v^c[ve]=') ? 1 : result
     endif
 endfunc " }}}
+
 " FUNCTION: s:msg(hl,...) {{{
 " 0 - error         LLEV=0 will show only them
 " 1 - warning       LLEV=1
@@ -317,6 +318,10 @@ func! s:msgcmdimpl(hl, bang, ...)
 endfunc
 " }}}
 
+" FUNCTION: s:redraw(timer) {{{
+func! s:redraw(timer)
+    :3UMsg △△△ redraw called △△△
+    redraw
 endfunc
 " }}}
 
