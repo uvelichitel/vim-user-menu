@@ -212,6 +212,7 @@ func! UserMenu_MainCallback(id, result)
         call feedkeys("\<C-U>:\<C-bslash>e@@\<CR>","n")
     endif
     call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
+    call UserMenu_CleanupSesVars()
 
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !got_it
@@ -338,6 +339,20 @@ func! UserMenu_GetBufOrSesVar(var_to_read)
 endfunc
 " }}}
 
+" FUNCTION: UserMenu_CleanupSesVars() {{{
+" Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
+func! UserMenu_CleanupSesVars()
+    if has_key(s:,'user_menu_init_cmd_mode')
+        call remove(s:,'user_menu_init_cmd_mode')
+    endif
+    if has_key(s:,'user_menu_init_cmd_mode_once')
+        call remove(s:,'user_menu_init_cmd_mode_once')
+    endif
+    if has_key(s:,'user_menu_cmode_cmd')
+        call remove(s:,'user_menu_cmode_cmd')
+    endif
+endfunc
+" }}}
 " FUNCTION: UserMenu_SetBufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
