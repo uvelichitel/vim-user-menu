@@ -1,4 +1,4 @@
-let g:user_menu = [
+let s:default_user_menu = [
             \ [ "Save", #{ type: 'ex', body: ':w', opts: "only-in-insert,always-something" } ],
             \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal" } ],
             \ [ "Open …", #{ type: 'ex', body: 'Ex', opts: "only-in-visual"} ],
@@ -127,7 +127,7 @@ func! UserMenu_Start()
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
 
     " The source of the menu…
-    let menu = g:user_menu
+    let menu = get(g:,'user_menu', s:default_user_menu)
     " … and the temporary (it'll exist till the selection), built effect of it.
     let s:current_menu[bufnr()] = []
     " The list of items passed to popup_menu()
