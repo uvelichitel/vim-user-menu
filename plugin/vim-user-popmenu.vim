@@ -93,6 +93,8 @@ let g:user_menu = [
 " A function that's called when a new buffor is created.
 func! UserMenu_InitBufAdd() 
     let b:user_menu_cmode_cmd = ""
+    let s:current_menu = {}
+    let s:current_menu[bufnr()] = []
     echom "→→→ au UserMenu_InitBufAdd"
 endfun
 " }}}
@@ -124,9 +126,14 @@ func! UserMenu_Start()
 
     call UserMenu_EnsureInit()
 
-    let menu = g:user_menu
-    let items = []
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
+
+    " The source of the menu…
+    let menu = g:user_menu
+    " … and the temporary (it'll exist till the selection), built effect of it.
+    let s:current_menu[bufnr()] = []
+    " The list of items passed to popup_menu()
+    let items = []
     for entry in menu
         " Fetch the options of the item.
         let opts = get(entry[1], 'opts', '')
@@ -155,6 +162,7 @@ func! UserMenu_Start()
         " Support embedding variables in the text via {var}.
         let entry[0] = substitute(entry[0], '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=eval(submatch(1))', '')
         call add( items, entry[0] )
+        call add( s:current_menu[bufnr()], entry )
     endfor
 
     " Special actions needed for command mode.
@@ -171,7 +179,7 @@ func! UserMenu_Start()
     endif
 
     call popup_menu( items, #{ 
-                \ callback: 'UserMenu_Main',
+                \ callback: 'UserMenu_MainCallback',
                 \ time: 20000,
                 \ border: [ ],
                 \ fixed: 0,
@@ -189,8 +197,8 @@ func! UserMenu_Start()
     return UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
 endfun " }}}
 
-" FUNCTION: UserMenu_Main() {{{
-func! UserMenu_Main(id, something)
+" FUNCTION: UserMenu_MainCallback() {{{
+func! UserMenu_MainCallback(id, result)
     " Should restore the command line?
     if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
         call feedkeys("\<C-U>\<ESC>".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),"n")
