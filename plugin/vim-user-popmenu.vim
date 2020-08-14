@@ -2,7 +2,7 @@ let s:default_user_menu = [
             \ [ "Save", #{ type: 'ex', body: ':w', opts: "only-in-insert,always-something" } ],
             \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal" } ],
             \ [ "Open …", #{ type: 'ex', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show", message: "hl:LineNr:Started the file explorer."} ],
+            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
             \ [ "∧∧ YET another… ∧∧", #{ type: 'ex', body: 'Ex', opts: "always-show"} ]
             \ ]
 
@@ -170,7 +170,7 @@ func! UserMenu_Start()
             call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
             call feedkeys("\<ESC>:","n")
             call feedkeys("\<F12>")
-            call s:msg(4,"Setting command line to:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
+            call s:msg(5,"Setting command line to:", UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
             call feedkeys("\<C-U>:echo '".UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")."'\<CR>","n")
             return ''
         else
@@ -209,7 +209,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Important, base debug log.
-    call s:msg(2,"⟁⟁ MainCallback ⟁⟁ °id° ≈≈", a:result, "←·→", (got_it ?
+    call s:msg(2,"⟁⟁ Callback ⟁⟁ °id° ≈≈", a:result, "←·→", (got_it ?
                 \ string(it[0])." ←·→ TPE ·".it[1]['type']."· BDY ·".it[1]['body']."·" : "≠"))
     echohl None
 
@@ -282,7 +282,7 @@ func! s:msg(hl, ...)
     if a:hl > get(g:,'user_menu_log_level', 1)
         return
     endif
-    let c = ["ErrorMsg", "WarningMsg", "um_lyellow3", "um_orange", "um_blue", "None"]
+    let c = ["ErrorMsg", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
     let mres = matchlist(a:000[0],'\v^hl:([^:]*):(.*)$')
     let [hl,a1] = !empty(mres) ? mres[1:2] : [ "", a:000[0] ]
     let hl = !empty(hl) ? hl : c[a:hl]
@@ -386,7 +386,7 @@ hi def um_lyellow2 ctermfg=221
 hi def um_lyellow3 ctermfg=226
 hi def um_green ctermfg=green
 hi def um_lgreen ctermfg=lightgreen
-hi def um_green2 ctermfg=34
+hi def um_green2 ctermfg=35
 hi def um_lgreen2 ctermfg=82
 hi def um_green3 ctermfg=40
 hi def um_orange ctermfg=172
