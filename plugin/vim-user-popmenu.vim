@@ -289,8 +289,12 @@ func! s:msg(hl, ...)
 
     " Expand any variables.
     for idx in range(len(args))
-        if args[idx] =~# '\v^[[:space:]]*[slgab]:[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*$'
+        if args[idx] =~# '\v^\s*[slgab]:[a-zA-Z_][a-zA-Z0-9_]*\s*$'
             let args[idx] = eval(args[idx])
+        elseif args[idx] =~# '\v^\s*[a-zA-Z_][a-zA-Z0-9_-]*\s*\(.*\)\s*$'
+            let args[idx] = eval(args[idx])
+        elseif args[idx][0] == '\\'
+            let args[idx] = args[idx][1:]
         endif
     endfor
 
@@ -312,9 +316,7 @@ func! s:msgcmdimpl(hl, bang, ...)
     call s:msg(hl, a:000)
 endfunc
 " }}}
-" FUNCTION: Msg(hl, ...) {{{
-func! Msg(hl, ...)
-    call s:msg(a:hl, join(a:000))
+
 endfunc
 " }}}
 
