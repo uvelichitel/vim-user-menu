@@ -117,10 +117,9 @@ endfunc
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
-    echohl Constant
-    echom "⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode:" mode()
+    call s:msg(4,"⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode:", mode(),
                 \ (!empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ? 
-                \ "←·→ Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) : "" )
+                \ "←·→ Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) : "" ))
     echohl None
 
     call UserMenu_EnsureInit()
@@ -205,9 +204,8 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Important, base debug log.
-    echohl Error
-    echom "⟁⟁ MainCallback ⟁⟁ °id° ≈≈" a:result "←·→" (got_it ?
-                \ string(it[0])." ←·→ TPE ·".it[1]['type']."· BDY ·".it[1]['body']."·" : "≠")
+    call s:msg(2,"⟁⟁ MainCallback ⟁⟁ °id° ≈≈", a:result, "←·→", (got_it ?
+                \ string(it[0])." ←·→ TPE ·".it[1]['type']."· BDY ·".it[1]['body']."·" : "≠"))
     echohl None
 
     " Should restore the command line?
@@ -219,9 +217,8 @@ func! UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !got_it
         if a:result > len(a:result)
-            echohl Error
-            echom "Error: the index is too large →→ •••" a:result ">" len(s:current_menu) "•••"
-            echohl None
+            call s:msg(0, "Error: the index is too large →→ •••", a:result, ">",
+                        \ len(s:current_menu), "•••")
         endif
 
         return
@@ -229,15 +226,10 @@ func! UserMenu_MainCallback(id, result)
 
     " Got a valid selection.
     " Read the attached action specification and perform it.
-    if it['type'] =~ '\v^(ex|cmd)$'
-        echohl Constant
-        echom "Running ·ex· command · :" . it[1]['body'] . " ·"
-        echohl None
+    if it[1]['type'] =~ '\v^(ex|cmd)$'
         exe ":".it[1]['body']
     else
-        echohl Error
-        echom "Unrecognized item type ·" it[1]['type'] "·"
-        echohl None
+        call s:msg(0, "Unrecognized item type ·", it[1]['type'], "·")
     endif
 
 endfunction
@@ -246,9 +238,23 @@ endfunction
 """""""""""""""""" HELPER FUNCTIONS {{{
 
 " FUNCTION: s:msg(hl,...) {{{
+" 0 - error         LLEV=0 will show only them
+" 1 - warning       LLEV=1
+" 2 - info          …
+" 3 - notice        …
+" 4 - debug         …
+" 5 - debug2        …
 func! s:msg(hl, ...)
-    exe 'echohl ' . a:hl
-    echom join(a:000)
+    " Log only warnings and errors by default.
+    if a:hl > get(g:,'user_menu_log_level', 1)
+        return
+    endif
+    let c = ["ErrorMsg", "WarningMsg", "um_lyellow3", "um_orange", "um_blue", "None"]
+    let mres = matchlist(a:000[0],'\v^hl:([^:]*):(.*)$')
+    let [hl,a1] = !empty(mres) ? mres[1:2] : [ "", a:000[0] ]
+    let hl = !empty(hl) ? hl : c[a:hl]
+    exe 'echohl ' . hl
+    echom join(flatten(a:0 > 1 ? [a1,a:000[1:]] : [a1]))
     echohl None 
 endfunc
 " }}}
@@ -267,9 +273,7 @@ func! UserMenu_GetBufOrSesVar(var_to_read)
     elseif exists("s:" . a:var_to_read)
         return get( s:, a:var_to_read, '' )
     else
-        echohl Error
-        echom "·• Warning •· →→ non-existent parameter given: ⟁" string(a:var_to_read) "⟁"
-        echohl None
+        call s:msg(1, "·• Warning «Get…» •· →→ non-existent parameter given: ⟁", string(a:var_to_read), "⟁")
     endif
 endfunc
 " }}}
@@ -284,9 +288,7 @@ func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
         let s:[a:var_to_set] = a:value_to_set
         return 2
     else
-        echohl Error
-        echom "·• Warning •· →→ non-existent parameter given: ⟁" string(a:var_to_set) "⟁"
-        echohl None
+        call s:msg(1, "·• Warning «Set…» •· →→ non-existent parameter given: ⟁", string(a:var_to_set), "⟁")
         return 0
     endif
 endfunc
