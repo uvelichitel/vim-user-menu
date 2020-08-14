@@ -28,10 +28,12 @@ let g:user_menu = [
 " 
 " The meaning of the dictionary keys:
 "
-" — The "type" is one of: "ex", "code", "other-item", "n-mapping", "i-mapping".
+" — The "type" is one of: "ex"/"cmd", "code", "other-item", "n-mapping",
+"   "i-mapping".
 "
 " — The "{command body}" is either:
-"   — A Ex command, like ":w" or "w". Type: "ex" causes such command to be run.
+"   — A Ex command, like ":w" or "w". Type: "ex" (or the alias "cmd") causes
+"     such command to be run.
 "   — An inline code, like, e.g.: "let g:var = 1". Type: "code".
 "   — An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
 "     Type "other-item" will cause the given other menu item to be run, only. 
