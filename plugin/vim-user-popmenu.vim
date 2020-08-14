@@ -118,18 +118,24 @@ func! VimPopMenuStart()
     endfor
 
     " TODO: Can the menu operate *in* command mode?
-    if mode() =~# '\v^c[ve]=' && empty(s:cmode_cmd)
-        let s:cmode_cmd = getcmdline()
-        exe "norm! \<esc>\<c-bslash>\<c-g>"
-        call VimPopMenuStart()
-        call feedkeys("\<Down>\<Up>","n")
+    if mode() =~# '\v^c[ve]='
+        if empty(s:cmode_cmd)
+            let s:cmode_cmd = getcmdline()
+            call feedkeys("\<C-U>\<ESC>\<F12>","")
+        else
+            " Ensure that no stray command will be left.
+            let s:cmode_cmd = ""
+        endif
         return ''
     endif
 
     call popup_menu( items, #{ 
                 \ callback: 'VimUserMenuMain',
                 \ border: [ ],
+                \ fixed: 0,
                 \ padding: [ 1, 1, 1, 1 ] } )
+    redraw
+
     return ''
 endfun " }}}
 
@@ -175,7 +181,7 @@ func! CreateEmptyList(name)
     eval("let ".a:name." = []")
 endfun
 
-imap <expr> <F12> VimPopMenuStart()
+inoremap <expr> <F12> VimPopMenuStart()
 nnoremap <expr> <F12> VimPopMenuStart()
 vnoremap <expr> <F12> VimPopMenuStart()
 " Following 2 don't work as expected…'
