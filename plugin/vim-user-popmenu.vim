@@ -135,26 +135,30 @@ func! UserMenu_Start()
     let items = []
     for entry in menu
         " Fetch the options of the item.
-        let opts = get(entry[1], 'opts', '')
-
+	let opts_key = get(entry[1], 'opts', '')
+	let opts_in = (type(opts_key) == 3) ? opts_key : split(opts_key, '\v(\s+|,)')
+	call add(entry, {})
+	call filter( opts_in, "!empty(extend(entry[2], { v:val : 1 }))" )
+	let opts = entry[2]
+'
         " The item shown only when the menu started in insert mode?
-        if opts =~ '\v'.opr.'only-in-insert'.ops && opts !~ '\v'.opr.'always-show'.ops
+        if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^(R[cvx]=|i[cx]=)' | continue | endif
         endif
         " The item shown only when the menu started in normal mode?
-        if opts =~ '\v'.opr.'only-in-normal'.ops && opts !~ '\v'.opr.'always-show'.ops
+        if has_key(l:opts, 'only-in-normal') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | continue | endif
         endif
         " The item shown only when the menu started in visual mode?
-        if opts =~ '\v'.opr.'only-in-visual'.ops && opts !~ '\v'.opr.'always-show'.ops
+        if has_key(l:opts, 'only-in-visual') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | continue | endif
         endif
         " The item shown only when the menu started when entering commands?
-        if opts =~ '\v'.opr.'only-in-ex'.ops && opts !~ '\v'.opr.'always-show'.ops
+        if has_key(l:opts, 'only-in-ex') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^c[ve]=' | continue | endif
         endif
         " The item shown only when the menu started when a job is running?
-        if opts =~ '\v'.opr.'only-in-sh'.ops && opts !~ '\v'.opr.'always-show'.ops
+        if has_key(l:opts, 'only-in-sh') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^[\!t]$' | continue | endif
         endif
 
@@ -230,7 +234,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Read the attached action specification and perform it.
-    if it[1]['type'] =~ '\v^(ex|cmd)$'
+    if it[1]['type'] =~ '\v^(cmd)$'
         exe ":".it[1]['body']
     else
         call s:msg(0, "Unrecognized ·item·: type ⟸", it[1]['type'], "⟹")
