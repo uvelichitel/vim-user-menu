@@ -114,9 +114,8 @@ endfunc
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
-    call s:msg(4,"⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode:", mode(),
-                \ (!empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ? 
-                \ "←·→ Cmd: ".string(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) : "" ))
+    let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd")
+    UMsg ⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode: mode() ((!empty(s:cmd))?'←·→Cmd:'.string(s:cmd):'')
     echohl None
 
     call UserMenu_EnsureInit()
@@ -166,16 +165,16 @@ func! UserMenu_Start()
 
     " Special actions needed for command mode.
     if mode() =~# '\v^c[ve]='
-        call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", ':'.getcmdline())
-        call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 1)
-        call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode_once", "once")
+        call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.getcmdline())
+        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 1)
+        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
         call feedkeys("\<Up>","n")
     endif
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
-                \ filtermode: "nvxsoilca",
+                \ filtermode: "a",
                 \ time: 30000,
                 \ border: [ ],
                 \ fixed: 0,
@@ -189,8 +188,8 @@ func! UserMenu_Start()
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
-    return !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ?
-		\ 'echo "'.escape(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),'"')."\"" : ""
+    return !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd")) ?
+		\ 'echo "'.escape(UserMenu_BufOrSesVar("user_menu_cmode_cmd"),'"')."\"" : ""
 endfunc " }}}
 
 " FUNCTION: UserMenu_MainCallback() {{{
@@ -208,13 +207,12 @@ func! UserMenu_MainCallback(id, result)
 
     " Should restore the command line?
     let had_cmd = 0
-    if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
-        " TODO: restoring
-        let @@ = UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")[1:]
-        call feedkeys("\<C-U>:\<C-bslash>e@@\<CR>","n")
+    if !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
+	" TODO2: timer, aby przetworzyć te klawisze przed wywołaniem komendy
+        call UserMenu_RestoreCmdLineFrom(UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
 	let had_cmd = 1
     endif
-    call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
+    call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
     call UserMenu_CleanupSesVars()
 
     " The menu has been canceled? (ESC, ^C, cursor move)
@@ -229,26 +227,30 @@ func! UserMenu_MainCallback(id, result)
 
     " Output message before the command?
     if has_key(it[1],'smessage') 
-        call s:msg(4,it[1]['smessage'])
+        call s:msg(4,UserMenu_ExpandVars(it[1]['smessage'])) 
     endif
 
     " Read the attached action specification and perform it.
-    if it[1]['type'] =~ '\v^(cmd)$'
-        exe ":".it[1]['body']
+    if it[1]['type'] == 'cmd'
+        exe it[1]['body']
+    elseif it[1]['type'] == 'expr'
+        call eval(it[1]['body'])
+    elseif it[1]['type'] =~# '\v^norm(\!|)$'
+        exe it[1]['type'] it[1]['body']
     else
         call s:msg(0, "Unrecognized ·item·: type ⟸", it[1]['type'], "⟹")
     endif
 
     " Output message after the command?
     if has_key(it[1],'message') 
-        call s:msg(4,it[1]['message'])
+        call s:msg(4,UserMenu_ExpandVars(it[1]['message']))
     endif
 
     let l:opts = it[2]
 
     " Reopen the menu?
     if has_key(l:opts, 'keep-menu-open')
-	call UserMenu_Start()
+        call timer_start(750, function("s:deferedMenuStart"))
     endif
 
     " Cancel ex command?
@@ -264,27 +266,30 @@ endfunction
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
     redraw
-    let tryb = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
-    if tryb > 0
+    let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
+    let s:key = a:key
+    if mode() =~# '\v^c[ve]=' | call timer_start(250, function("s:redraw")) | endif
+    if s:tryb > 0
         if a:key == "\<CR>"
-            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 0)
-            call s:msg(3, mode(), "←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode",
-                        \ tryb,"···")
-        elseif UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode_once") == "once"
-            call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode_once", "already-ran")
-            UMsg Setting command line to •⟼ appear ⟻• as:
-                        \ UserMenu_GetBufOrSesVar('user_menu_cmode_cmd')
+            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
+            3UMsg mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
+        elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
+            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
+            3UMsg mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
+            UMsg Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
+        else
+            3UMsg mode() ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
         endif
-        call timer_start(250, function("s:redraw"))
         " Don't consume the key — pass it through, unless it's <Up>.
+        redraw
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
-        let result = popup_filter_menu(a:id, a:key)
-        call s:msg(3, mode(), "←←←", a:key, "→→→ filter °°° user_menu_init_cmd_mode",
-                    \ tryb, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
-
-        return (mode() =~# '\v^c[ve]=') ? 1 : result
+        let s:result = popup_filter_menu(a:id, a:key)
+        3UMsg mode() ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+                    \ s:tryb °°° ret ((mode()=~#'\v^c[ve]=')?'forced-1':s:result) °°°
+        redraw
+        return (mode() =~# '\v^c[ve]=') ? 1 : s:result
     endif
 endfunc " }}}
 
@@ -309,7 +314,7 @@ func! s:msg(hl, ...)
     for idx in range(len(args))
         if args[idx] =~# '\v^\s*[slgab]:[a-zA-Z_][a-zA-Z0-9_]*\s*$'
             let args[idx] = eval(args[idx])
-        elseif args[idx] =~# '\v^\s*[a-zA-Z_][a-zA-Z0-9_-]*\s*\(.*\)\s*$'
+        elseif args[idx] =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
             let args[idx] = eval(args[idx])
         elseif args[idx][0] == '\\'
             let args[idx] = args[idx][1:]
@@ -337,22 +342,32 @@ endfunc
 
 " FUNCTION: s:redraw(timer) {{{
 func! s:redraw(timer)
-    :3UMsg △△△ redraw called △△△
+    :5UMsg △ redraw called △
     redraw
 endfunc
 " }}}
 
-" FUNCTION: UserMenu_GetBufOrSesVar() {{{
+" FUNCTION: s:deferedMenuStart(timer) {{{
+func! s:deferedMenuStart(timer)
+    call UserMenu_Start()
+    echohl um_lyellow
+    echom "Opened again the menu."
+    echohl None
+    redraw
+endfunc
+" }}}
+
+" FUNCTION: UserMenu_BufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_GetBufOrSesVar(var_to_read)
+func! UserMenu_BufOrSesVar(var_to_read,...)
     let s:tmp = a:var_to_read
     if exists("s:" . a:var_to_read)
-        return get( s:, a:var_to_read, '' )
+        return get( s:, a:var_to_read, a:0 ? a:1 : '' )
     elseif exists("b:" . a:var_to_read)
-        return get( b:, a:var_to_read, '' )
+        return get( b:, a:var_to_read, a:0 ? a:1 : '' )
     else
         1UMsg ·• Warning «Get…» •· →→ non-existent parameter given: ⟁ s:tmp ⟁
-        return ''
+        return a:0 ? a:1 : ''
     endif
 endfunc
 " }}}
@@ -371,9 +386,10 @@ func! UserMenu_CleanupSesVars()
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_SetBufOrSesVar() {{{
+ 
+" FUNCTION: UserMenu_BufOrSesVarSet() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
+func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
     let s:tmp = a:var_to_set
     if exists("s:" . a:var_to_set)
         let s:[a:var_to_set] = a:value_to_set
@@ -393,6 +409,18 @@ func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
             endif
         endif
     endif
+endfunc
+" }}}
+
+" FUNCTION: UserMenu_ExpandVars {{{
+func! UserMenu_ExpandVars(text)
+    return substitute(a:text, '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=eval(submatch(1))', '')
+endfunc
+" }}}
+
+" FUNCTION: UserMenu_RestoreCmdLineFrom
+func! UserMenu_RestoreCmdLineFrom(cmd)
+    call feedkeys(a:cmd,"n")
 endfunc
 " }}}
 
@@ -435,7 +463,7 @@ augroup END
 inoremap <expr> <F12> UserMenu_Start()
 nnoremap <expr> <F12> UserMenu_Start()
 vnoremap <expr> <F12> UserMenu_Start()
-cmap <F12> <C-\>eUserMenu_Start()<CR>
+cnoremap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
 onoremap <expr> <F12> UserMenu_Start()
 command! -nargs=+ -count=4 -bang -bar UMsg call s:msgcmdimpl(<count>,<q-bang>,<f-args>)
@@ -460,10 +488,14 @@ hi def um_orange ctermfg=172
 
 let s:default_user_menu = [
             \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
-            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal keep-menu-open" } ],
-            \ [ "Open …", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
-            \ [ "∧∧ YET another… ∧∧", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd"} ]
+            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let : !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open", message: "hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
+            \ [ "Open [vis]…", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "← Other… [msg] →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
+            \ [ "°° always canc keep °°", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd keep-menu-open"} ],
+            \ [ "•• NEW [norm] ••", #{ type: 'norm', body: "\<C-W>n", opts: "always-show cancel-ex-cmd"} ],
+            \ [ "•• Upcase Letters ••", #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
+            \ [ "•• Escape Command Line ••", #{ type: 'expr', body: "feedkeys('\<C-bslash>eescape(getcmdline(), \" \\\\\")\<CR>','n')", opts: ['only-in-ex'] } ],
+            \ [ "•• Experiment / Command Line ••", #{ type: 'expr', body: 'feedkeys(":Ex\<CR>","n")', opts: [] } ]
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
