@@ -244,6 +244,19 @@ func! UserMenu_MainCallback(id, result)
     if has_key(it[1],'message') 
         call s:msg(4,it[1]['message'])
     endif
+
+    let l:opts = it[2]
+
+    " Reopen the menu?
+    if has_key(l:opts, 'keep-menu-open')
+	call UserMenu_Start()
+    endif
+
+    " Cancel ex command?
+    if has_key(l:opts, 'cancel-ex-cmd') && had_cmd
+	call feedkeys("\<C-U>\<BS>","n")
+    endif
+
 endfunction
 " }}}
 
