@@ -114,8 +114,8 @@ endfunc
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
-    let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd")
-    UMsg ⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode: mode() ((!empty(s:cmd))?'←·→Cmd:'.string(s:cmd):'')
+    let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
+    UMsg ⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd ):'')
     echohl None
 
     call UserMenu_EnsureInit()
@@ -287,7 +287,7 @@ func! UserMenu_KeyFilter(id,key)
     else
         let s:result = popup_filter_menu(a:id, a:key)
         3UMsg mode() ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
-                    \ s:tryb °°° ret ((mode()=~#'\v^c[ve]=')?'forced-1':s:result) °°°
+                    \ s:tryb °°° ret ((mode()=~#'\v^c[ve]=') ? 'forced-1' : s:result) °°°
         redraw
         return (mode() =~# '\v^c[ve]=') ? 1 : s:result
     endif
@@ -310,16 +310,39 @@ func! s:msg(hl, ...)
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
     let hl = a:hl
 
-    " Expand any variables.
+    " Expand any variables and concatenate separated atoms wrapped in parens.
+    let start_idx = -1
+    let new_args = []
     for idx in range(len(args))
-        if args[idx] =~# '\v^\s*[slgab]:[a-zA-Z_][a-zA-Z0-9_]*\s*$'
-            let args[idx] = eval(args[idx])
-        elseif args[idx] =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
-            let args[idx] = eval(args[idx])
-        elseif args[idx][0] == '\\'
-            let args[idx] = args[idx][1:]
+        let arg = args[idx]
+        " Unclosed paren?
+        " Discriminate two special cases: (mode() and (mode(sub())
+        if arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^\(]*\([^)]*\)[^)]*\))$'
+            let start_idx = idx
+        " A free, closing paren?
+        elseif start_idx >= 0 && arg =~# '\v[^\(].*\)$' && arg !~ '\v\([^\)]*\)$'
+            call add(new_args,eval(join(args[start_idx:idx])))
+            let start_idx = -1
+            continue
+        endif
+    
+        if start_idx == -1
+            " A variable?
+            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*\s*$'
+                let arg = eval(arg)
+            " A function call or an expression wrapped in parens?
+            elseif arg =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
+                let arg = eval(arg)
+            " A \-quoted atom?
+            elseif arg[0] == '\'
+                let arg = arg[1:]
+            endif
+
+            " Store/save the element.
+            call add(new_args, arg)
         endif
     endfor
+    let args = new_args
 
     " Finally: detect any hl:…: prefix, select the color, output the message.
     let c = ["Error", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
