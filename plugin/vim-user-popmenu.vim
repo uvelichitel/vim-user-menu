@@ -265,12 +265,12 @@ endfunction
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
     redraw
-    let s:mode = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
-    if s:mode > 0
+    let tryb = UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode")
+    if tryb > 0
         if a:key == "\<CR>"
             call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode", 0)
             call s:msg(3, mode(), "←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode",
-                        \ s:mode,"···")
+                        \ tryb,"···")
         elseif UserMenu_GetBufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_SetBufOrSesVar("user_menu_init_cmd_mode_once", "already-ran")
             UMsg Setting command line to •⟼ appear ⟻• as:
@@ -283,7 +283,7 @@ func! UserMenu_KeyFilter(id,key)
     else
         let result = popup_filter_menu(a:id, a:key)
         call s:msg(3, mode(), "←←←", a:key, "→→→ filter °°° user_menu_init_cmd_mode",
-                    \ s:mode, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
+                    \ tryb, "°°°", "ret", (mode() =~# '\v^c[ve]=') ? "forced-1" : result, "°°°")
 
         return (mode() =~# '\v^c[ve]=') ? 1 : result
     endif
