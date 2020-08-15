@@ -443,9 +443,35 @@ func! UserMenu_ExpandVars(text)
 endfunc
 " }}}
 
+" FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
+func! UserMenu_GetPrefixValue(pfx,msg)
+    let mres = matchlist(a:msg,'\v^'.a:pfx.':([^:]*):(.*)$')
+    return empty(mres) ? [a:msg,0] : mres[1:2]
+endfunc
+" }}}
 " FUNCTION: UserMenu_RestoreCmdLineFrom
 func! UserMenu_RestoreCmdLineFrom(cmd)
     call feedkeys(a:cmd,"n")
+endfunc
+" }}}
+" FUNCTION: UserMenu_PauseAllTimers
+func! UserMenu_PauseAllTimers(pause,time)
+    for t in s:timers
+        call timer_pause(t,a:pause)
+    endfor
+
+    if a:pause && a:time > 0
+        " Limit the amount of time of the pause.
+        call add(s:timers, timer_start(a:time, function("UserMenu_UnPauseAllTimersCallback")))
+    endif
+endfunc
+" }}}
+" FUNCTION: UserMenu_UnPauseAllTimers
+func! UserMenu_UnPauseAllTimersCallback(timer)
+    call filter( s:timers, 'v:val != a:timer' )
+    for t in s:timers
+        call timer_pause(t,0)
+    endfor
 endfunc
 " }}}
 
