@@ -1,9 +1,9 @@
 let s:default_user_menu = [
-            \ [ "Save", #{ type: 'ex', body: ':w', opts: "only-in-insert,always-something" } ],
-            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal" } ],
-            \ [ "Open …", #{ type: 'ex', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'ex', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
-            \ [ "∧∧ YET another… ∧∧", #{ type: 'ex', body: 'Ex', opts: "always-show"} ]
+            \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
+            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal keep-menu-open" } ],
+            \ [ "Open …", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "← Other… →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
+            \ [ "∧∧ YET another… ∧∧", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd"} ]
             \ ]
 
 " ·•« User Menu Plugin »•· ·•« zphere-zsh/vim-user-popmenu »•·
@@ -28,12 +28,12 @@ let s:default_user_menu = [
 " 
 " The meaning of the dictionary keys:
 "
-" — The "type" is one of: "ex"/"cmd", "code", "other-item", "n-mapping",
-"   "i-mapping".
+" — The "type" is one of: "cmd", "code", "other-item", "n-mapping",
+"   "i-mapping", "c-mapping".
 "
 " — The "{command body}" is either:
-"   — A Ex command, like ":w" or "w". Type: "ex" (or the alias "cmd") causes
-"     such command to be run.
+"   — A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
+"     run.
 "   — An inline code, like, e.g.: "let g:var = 1". Type: "code".
 "   — An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
 "     Type "other-item" will cause the given other menu item to be run, only. 
