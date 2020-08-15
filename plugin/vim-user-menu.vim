@@ -81,7 +81,7 @@
 " — The "prompt-text" is a prompt-message text to be show when asking for the
 "   user input (which is then assigned to the g:user_menu_prompt_input).
 "
-" — The "additional command body" is an Ex command to be run immediately after
+" – The "additional command body" is an Ex command to be run immediately after
 "   executing the main body ↔ the main command part.
 " 
 
@@ -123,7 +123,7 @@ func! UserMenu_Start()
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
 
     " The source of the menu…
-    let menu = get(g:,'user_menu', s:default_user_menu)
+    let menu = deepcopy(get(g:,'user_menu', s:default_user_menu))
     " … and the temporary (it'll exist till the selection), built effect of it.
     let s:current_menu[bufnr()] = []
     " The list of items passed to popup_menu()
@@ -158,7 +158,7 @@ func! UserMenu_Start()
         endif
 
         " Support embedding variables in the text via {var}.
-        let entry[0] = substitute(entry[0], '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=eval(submatch(1))', '')
+        let entry[0] = UserMenu_ExpandVars(entry[0])
         call add( items, entry[0] )
         call add( s:current_menu[bufnr()], entry )
     endfor
@@ -170,7 +170,6 @@ func! UserMenu_Start()
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
         call feedkeys("\<Up>","n")
     endif
-    hi PopupSelected ctermfg=lightyellow ctermbg=blue
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
@@ -185,7 +184,7 @@ func! UserMenu_Start()
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
-                \ highlight: 'um_blue',
+                \ highlight: 'UMPmenu',
                 \ cursorline: 1,
                 \ borderhighlight: [ 'um_yellow', 'um_yellow', 'um_yellow', 'um_yellow' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
@@ -198,13 +197,14 @@ endfunc " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
     " Carefully establish the selection.
-    let [s:it,s:got_it,s:result] = [ [ "", {} ], 0, a:result ]
+    let [s:it,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
         let [s:it,s:got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
+        let [s:type,s:body] = [s:it[1]['type'],s:it[1]['body']]
     endif
 
     " Important, base debug log.
-    2UMsg °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:it[1]['type'].'· BDY ·'.s:it[1]['body'].'·' : '≠')
+    2UMsg °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
     echohl None
 
     " Should restore the command line?
@@ -227,9 +227,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message before the command?
-    if has_key(s:it[1],'smessage') 
-        7UMsg UserMenu_ExpandVars(s:it[1]['smessage'])
-    endif
+    call UserMenu_DeployUserMessage(s:it[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
     if s:it[1]['type'] == 'cmd'
@@ -239,19 +237,17 @@ func! UserMenu_MainCallback(id, result)
     elseif s:it[1]['type'] =~# '\v^norm(\!|)$'
         exe s:it[1]['type'] s:it[1]['body']
     else
-        UMsg! Unrecognized ·item· type: • s:it[1]['type'] •
+        UMsg! Unrecognized ·item· type: • s:type •
     endif
 
     " Output message after the command?
-    if has_key(s:it[1],'message') 
-        7UMsg UserMenu_ExpandVars(s:it[1]['message'])
-    endif
+    call UserMenu_DeployUserMessage(s:it[1], 'message', 1)
 
     let l:opts = s:it[2]
 
     " Reopen the menu?
     if has_key(l:opts, 'keep-menu-open')
-        call timer_start(750, function("s:deferedMenuStart"))
+        call add(s:timers, timer_start(750, function("s:deferedMenuStart")))
     endif
 
     " Cancel ex command?
@@ -264,12 +260,34 @@ endfunction
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
+" FUNCTION: UserMenu_DeployUserMessage() {{{
+func! UserMenu_DeployUserMessage(dict,key,init,...)
+    if a:init > 0
+        let [s:msgs, s:msg_idx] = [ [], 0 ]
+        let [s:pauses, s:pause_idx] = [ [], 0 ]
+    endif
+    if has_key(a:dict,a:key) 
+        let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]',a:dict[a:key])
+        if a:init >= 0
+            call add(s:msgs, s:msg)
+            call add(s:pauses, s:pause)
+            call add(s:timers, timer_start(a:0 ? a:1 : 150, function("s:deferedUserMessage")))
+        else
+            7UMsg UserMenu_ExpandVars(s:msg)
+            redraw
+            if s:pause =~ '\v^\d+$' && s:pause > 0
+                call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
+                exe "sleep" s:pause
+            endif
+        endif
+    endif
+endfunc
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
     redraw
     let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
-    if mode() =~# '\v^c[ve]=' | call timer_start(250, function("s:redraw")) | endif
+    if mode() =~# '\v^c[ve]=' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
     if s:tryb > 0
         if a:key == "\<CR>"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
@@ -282,7 +300,7 @@ func! UserMenu_KeyFilter(id,key)
         else
             3UMsg mode() ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
         endif
-        " Don't consume the key — pass it through, unless it's <Up>.
+        " Don't consume the key – pass it through, unless it's <Up>.
         redraw
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
@@ -348,7 +366,7 @@ func! s:msg(hl, ...)
 
     " Finally: detect any hl:…: prefix, select the color, output the message.
     let c = ["Error", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
-    let mres = matchlist(args[0],'\v^hl:([^:]*):(.*)$')
+    let mres = matchlist(args[0],'\v^hl:([^:]+):(.*)$')
     let [hl,a1] = !empty(mres) ? [ (mres[1] =~# '^\d\+$' ? c[mres[1]] : mres[1]), mres[2] ]
                 \ : [ c[hl], args[0] ]
     let hl = (hl !~# '\v^(\d+|um_[a-z0-9]+|WarningMsg|Error)$') ? 'um_'.hl : hl
@@ -367,18 +385,34 @@ endfunc
 
 " FUNCTION: s:redraw(timer) {{{
 func! s:redraw(timer)
-    :5UMsg △ redraw called △
+    call filter( s:timers, 'v:val != a:timer' )
+    5UMsg △ redraw called △
     redraw
 endfunc
 " }}}
 
 " FUNCTION: s:deferedMenuStart(timer) {{{
 func! s:deferedMenuStart(timer)
+    call filter( s:timers, 'v:val != a:timer' )
     call UserMenu_Start()
     echohl um_lyellow
     echom "Opened again the menu."
     echohl None
     redraw
+endfunc
+" }}}
+" 
+" FUNCTION: s:deferedUserMessage(timer) {{{
+func! s:deferedUserMessage(timer)
+    call filter( s:timers, 'v:val != a:timer' )
+    7UMsg UserMenu_ExpandVars(s:msgs[s:msg_idx])
+    let pause = s:pauses[s:pause_idx]
+    let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
+    redraw
+    if pause =~ '\v^\d+$' && pause > 0
+        call UserMenu_PauseAllTimers(1, pause * 1000 + 10)
+        exe "sleep" pause
+    endif
 endfunc
 " }}}
 
@@ -552,6 +586,7 @@ hi def UMPmenu ctermfg=220 ctermbg=darkblue
 hi PopupSelected ctermfg=220 ctermbg=blue
 hi PmenuSel ctermfg=220 ctermbg=blue
 
+let s:timers = []
 let s:default_user_menu = [
             \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
             \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let : !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open", message: "hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
