@@ -170,12 +170,14 @@ func! UserMenu_Start()
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
         call feedkeys("\<Up>","n")
     endif
+    hi PopupSelected ctermfg=lightyellow ctermbg=blue
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
                 \ filtermode: "a",
                 \ time: 30000,
+                \ mapping: 0,
                 \ border: [ ],
                 \ fixed: 0,
                 \ flip: 1,
@@ -183,8 +185,9 @@ func! UserMenu_Start()
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
-                \ highlight: 'Constant',
-                \ borderhighlight: [ 'Statement', 'Statement', 'Statement', 'Statement' ],
+                \ highlight: 'um_blue',
+                \ cursorline: 1,
+                \ borderhighlight: [ 'um_yellow', 'um_yellow', 'um_yellow', 'um_yellow' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
