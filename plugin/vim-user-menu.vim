@@ -7,7 +7,7 @@
 " let g:user_menu = [
 "     \ [ "Reload",      #{ type: "cmd",  body: ":ed" } ],
 "     \ [ "Save",        #{ type: "cmd",  body: ":w!" } ],
-"     \ [ "Load passwd", #{ type: "code", body: "tabe /etc/passwd" } ]
+"     \ [ "Load passwd", #{ type: "expr", body: "MyFunction()" } ]
 " \ ]
 " 
 " The "syntax" of the user-menu «list» of «dictionaries» is:
@@ -20,13 +20,15 @@
 " 
 " The meaning of the dictionary keys:
 "
-" — The "type" is one of: "cmd", "code", "other-item", "n-mapping",
+" — The "type" is one of: "cmd", "expr", "other-item", "n-mapping",
 "   "i-mapping", "c-mapping".
 "
 " — The "{command body}" is either:
 "   — A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
 "     run.
-"   — An inline code, like, e.g.: "let g:var = 1". Type: "code".
+"   — An expression code, like, e.g.: "MyFunction()". Type: "expr".
+"   — A sequence of norm commands, like, e.g.: "\<C-W>gf". Type: "norm" and
+"     "norm!".
 "   — An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
 "     Type "other-item" will cause the given other menu item to be run, only. 
 "   — An sequence of keys of a complex normal command. Type: "n-mapping" invokes
@@ -42,7 +44,8 @@
 "     \   message: "message-text",
 "     \   prompt: "prompt-text",
 "     \   chain: "text-or-id",
-"     \   body2: "additional command body of type <code>",
+"     \   body2: "additional command body of type <cmd>",
+"     \   predic: "expression",
 "     \ }
 " \ ] ]
 "   
@@ -70,15 +73,16 @@
 "
 " — The "start-message-text" is a message text to be shown *before* running the
 "   command. It can start with a special string: "hl:<HL-group>:…" to show the
-"   message in a specified color.
+"   message in a specified color. There are multiple easy to use hl-groups, like
+"   green,lgreen,yellow,lyellow,lyellow2,blue,blue2,lblue,lblue2,etc.
 "
 " — The "message-text" is a message text to be shown after running the command.
 "
 " — The "prompt-text" is a prompt-message text to be show when asking for the
 "   user input (which is then assigned to the g:user_menu_prompt_input).
 "
-" — The "additional command body" is an inline code (not a single Ex command) to
-"   be run immediately after executing the main body ↔ the main command part.
+" — The "additional command body" is an Ex command to be run immediately after
+"   executing the main body ↔ the main command part.
 " 
 
 " FUNCTION: UserMenu_InitFT() {{{
