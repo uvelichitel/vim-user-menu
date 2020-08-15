@@ -97,7 +97,7 @@ endfunc
 " FUNCTION: UserMenu_EnsureInit() {{{
 func! UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
-        2UMsg No \b:var detected ⟵⟶ calling: ➤➤➤ ☛ \UserMenu_InitBufAdd() ☚…
+        2UMsg No \b:var detected °° calling: °° « \UserMenu_InitBufAdd() » …
         call UserMenu_InitBufAdd()
         return 0
     endif
@@ -217,8 +217,7 @@ func! UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
         if a:result > len(a:result)
-            call s:msg(0, "Error: the index is too large →→ •••", a:result, ">",
-                        \ len(s:current_menu), "•••")
+            UMsg! Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
 
         return
@@ -226,7 +225,7 @@ func! UserMenu_MainCallback(id, result)
 
     " Output message before the command?
     if has_key(s:it[1],'smessage') 
-        call s:msg(4,UserMenu_ExpandVars(s:it[1]['smessage'])) 
+        7UMsg UserMenu_ExpandVars(s:it[1]['smessage'])
     endif
 
     " Read the attached action specification and perform it.
@@ -237,15 +236,15 @@ func! UserMenu_MainCallback(id, result)
     elseif s:it[1]['type'] =~# '\v^norm(\!|)$'
         exe s:it[1]['type'] s:it[1]['body']
     else
-        call s:msg(0, "Unrecognized ·item·: type ⟸", it[1]['type'], "⟹")
+        UMsg! Unrecognized ·item· type: • s:it[1]['type'] •
     endif
 
     " Output message after the command?
-    if has_key(it[1],'message') 
-        call s:msg(4,UserMenu_ExpandVars(it[1]['message']))
+    if has_key(s:it[1],'message') 
+        7UMsg UserMenu_ExpandVars(s:it[1]['message'])
     endif
 
-    let l:opts = it[2]
+    let l:opts = s:it[2]
 
     " Reopen the menu?
     if has_key(l:opts, 'keep-menu-open')
@@ -356,9 +355,9 @@ endfunc
 " }}}
 
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
-func! s:msgcmdimpl(hl, bang, ...)
+func! s:msgcmdimpl(hl, bang, linenum, ...)
     let hl = !empty(a:bang) ? 0 : a:hl
-    call s:msg(hl, a:000)
+    call s:msg(hl, extend(["[".a:linenum."]"], a:000))
 endfunc
 " }}}
 
@@ -388,7 +387,7 @@ func! UserMenu_BufOrSesVar(var_to_read,...)
     elseif exists("b:" . a:var_to_read)
         return get( b:, a:var_to_read, a:0 ? a:1 : '' )
     else
-        1UMsg ·• Warning «Get…» •· →→ non-existent parameter given: ⟁ s:tmp ⟁
+        5UMsg ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
         return a:0 ? a:1 : ''
     endif
 endfunc
@@ -420,7 +419,7 @@ func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
             let b:[a:var_to_set] = a:value_to_set
             return 1
         else
-            1UMsg ·• Warning «Set…» •· →→ non-existent parameter given: ⟁ s:tmp ⟁
+            5UMsg ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
             let b:[a:var_to_set] = a:value_to_set
             if exists("b:" . a:var_to_set)
                 let b:[a:var_to_set] = a:value_to_set
