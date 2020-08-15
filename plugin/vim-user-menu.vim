@@ -5,9 +5,10 @@
 " Example user-menu «list» of «dictionaries»:
 " 
 " let g:user_menu = [
-"     \ [ "Reload",      #{ type: "cmd",  body: ":ed" } ],
-"     \ [ "Save",        #{ type: "cmd",  body: ":w!" } ],
-"     \ [ "Load passwd", #{ type: "expr", body: "MyFunction()" } ]
+"     \ [ "Reload",      #{ type: "cmd",  body: ":edit!" } ],
+"     \ [ "Quit Vim",    #{ type: "cmd",  body: ":qa!" } ],
+"     \ [ "New Window",  #{ type: "keys", body: "\<C-w>n" } ],
+"     \ [ "Load passwd", #{ type: "expr", body: "LoadPasswd()" } ]
 " \ ]
 " 
 " The "syntax" of the user-menu «list» of «dictionaries» is:
@@ -20,20 +21,22 @@
 " 
 " The meaning of the dictionary keys:
 "
-" — The "type" is one of: "cmd", "expr", "other-item", "n-mapping",
-"   "i-mapping", "c-mapping".
+" – The "type" is one of: "cmd", "expr", "norm", "keys", "n-mapping",
+" "i-mapping", "c-mapping", "other-item".
 "
-" — The "{command body}" is either:
-"   — A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
+" – The "{command body}" is either:
+"   – A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
 "     run.
-"   — An expression code, like, e.g.: "MyFunction()". Type: "expr".
-"   — A sequence of norm commands, like, e.g.: "\<C-W>gf". Type: "norm" and
+"   – An expression code, like, e.g.: "MyFunction()". Type: "expr".
+"   – A sequence of norm commands, like, e.g.: "\<C-W>gf". Type: "norm" and
 "     "norm!".
-"   — An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
+"   – A sequence of keys to feed into the editor simulating input, like, e.g.:
+"     "\<C-w>n". Type: "keys".
+"   – An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
 "     Type "other-item" will cause the given other menu item to be run, only. 
-"   — An sequence of keys of a complex normal command. Type: "n-mapping" invokes
+"   – An sequence of keys of a complex normal command. Type: "n-mapping" invokes
 "     the keys.
-"   — An sequence of keys of a complex insert-mode mapping. Type: "i-mapping"
+"   – An sequence of keys of a complex insert-mode mapping. Type: "i-mapping"
 "     invokes the keys (feeds them to the editor) potentially causing various
 "     insert-mode mappings to trigger.
 "   
@@ -49,36 +52,36 @@
 "     \ }
 " \ ] ]
 "   
-" — The "options" is a comma- or space-separated list of subset of these
+" – The "options" is a comma- or space-separated list of subset of these
 "   options: "keep-menu-open", "only-in-normal", "only-in-insert",
 "   "only-in-visual", "only-in-cmd", "only-in-sh", "always-show",
 "   "cancel-ex-cmd".
 "
-"   — The "keep-menu-open" option causes the menu to be reopened immediately
+"   – The "keep-menu-open" option causes the menu to be reopened immediately
 "     after the selected command will finish executing.
-"   — The "only-in-…" options show the item only if the menu is started in the
+"   – The "only-in-…" options show the item only if the menu is started in the
 "     given mode, for example when inserting text, unless also the "always-show"
 "     option is specified, in which case the item is being always displayed,
 "     however it's executed *only* in the given mode (an error is displayed if
 "     the mode is wrong).
-"   — The "cancel-ex-cmd" option causes the currently typed-in command (i.e.:
+"   – The "cancel-ex-cmd" option causes the currently typed-in command (i.e.:
 "     the text: ":… text …" in the command line window) to be discarded when the
 "     menu is started (otherwise the text/the command is being always restored
 "     after the menu closes → right before executing the selected command; this
 "     allows to define a menu item that does something with the command, e.g.:
 "     quotes slashes within it).
 "
-" — The "text-or-id" is either the text of the other user-menu item (the one to
+" – The "text-or-id" is either the text of the other user-menu item (the one to
 "   chain-up/run after the edited item) or an ID of it.
 "
-" — The "start-message-text" is a message text to be shown *before* running the
+" – The "start-message-text" is a message text to be shown *before* running the
 "   command. It can start with a special string: "hl:<HL-group>:…" to show the
 "   message in a specified color. There are multiple easy to use hl-groups, like
 "   green,lgreen,yellow,lyellow,lyellow2,blue,blue2,lblue,lblue2,etc.
 "
-" — The "message-text" is a message text to be shown after running the command.
+" – The "message-text" is a message text to be shown after running the command.
 "
-" — The "prompt-text" is a prompt-message text to be show when asking for the
+" – The "prompt-text" is a prompt-message text to be show when asking for the
 "   user input (which is then assigned to the g:user_menu_prompt_input).
 "
 " – The "additional command body" is an Ex command to be run immediately after
