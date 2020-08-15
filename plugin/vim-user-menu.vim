@@ -351,7 +351,7 @@ func! s:msg(hl, ...)
                 \ : [ c[hl], args[0] ]
     let hl = (hl !~# '\v^(\d+|um_[a-z0-9]+|WarningMsg|Error)$') ? 'um_'.hl : hl
     exe 'echohl ' . hl
-    echom join( flatten( ( len(args) > 1 ) ? [a1,args[1:]] : [a1]) )
+    echom join( Flatten( ( len(args) > 1 ) ? [a1,args[1:]] : [a1]) )
     echohl None 
 endfunc
 " }}}
@@ -450,6 +450,18 @@ endfunc
 """""""""""""""""" THE END OF THE HELPER FUNCTIONS }}}
 
 """""""""""""""""" UTILITY FUNCTIONS {{{
+
+func! Flatten(list)
+    let new_list = []
+    for el in a:list
+        if type(el) == 3
+            call extend(new_list, el)
+        else
+            call add(new_list, el)
+        endif
+    endfor
+    return new_list
+endfunc
 
 func! Mapped(fn, l)
     let new_list = deepcopy(a:l)
