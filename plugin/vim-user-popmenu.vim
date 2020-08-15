@@ -349,12 +349,14 @@ endfunc
 " FUNCTION: UserMenu_GetBufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_GetBufOrSesVar(var_to_read)
-    if exists("b:" . a:var_to_read)
-        return get( b:, a:var_to_read, '' )
-    elseif exists("s:" . a:var_to_read)
+    let s:tmp = a:var_to_read
+    if exists("s:" . a:var_to_read)
         return get( s:, a:var_to_read, '' )
+    elseif exists("b:" . a:var_to_read)
+        return get( b:, a:var_to_read, '' )
     else
-        call s:msg(1, "·• Warning «Get…» •· →→ non-existent parameter given: ⟁", string(a:var_to_read), "⟁")
+        1UMsg ·• Warning «Get…» •· →→ non-existent parameter given: ⟁ s:tmp ⟁
+        return ''
     endif
 endfunc
 " }}}
@@ -376,17 +378,24 @@ endfunc
 " FUNCTION: UserMenu_SetBufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_SetBufOrSesVar(var_to_set, value_to_set)
-    let b:[a:var_to_set] = a:value_to_set
-    if exists("b:" . a:var_to_set)
-        let b:[a:var_to_set] = a:value_to_set
-        return 1
-    " FIXME
-    elseif 0 || exists("s:" . a:var_to_set)
+    let s:tmp = a:var_to_set
+    if exists("s:" . a:var_to_set)
         let s:[a:var_to_set] = a:value_to_set
-        return 2
     else
-        call s:msg(1, "·• Warning «Set…» •· →→ non-existent parameter given: ⟁", string(a:var_to_set), "⟁")
-        return 0
+        if exists("b:" . a:var_to_set)
+            let b:[a:var_to_set] = a:value_to_set
+            return 1
+        else
+            1UMsg ·• Warning «Set…» •· →→ non-existent parameter given: ⟁ s:tmp ⟁
+            let b:[a:var_to_set] = a:value_to_set
+            if exists("b:" . a:var_to_set)
+                let b:[a:var_to_set] = a:value_to_set
+                return 1
+            else
+                let s:[a:var_to_set] = a:value_to_set
+                return 0
+            endif
+        endif
     endif
 endfunc
 " }}}
