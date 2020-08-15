@@ -115,7 +115,7 @@ endfunc
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
     let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
-    UMsg ⟁⟁⟁ UserMenu_Start ⟁⟁⟁ Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd ):'')
+    UMsg °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd):'')
     echohl None
 
     call UserMenu_EnsureInit()
@@ -195,14 +195,13 @@ endfunc " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
     " Carefully establish the selection.
-    let [it,got_it] = [ [ "", {} ], 0 ]
+    let [s:it,s:got_it,s:result] = [ [ "", {} ], 0, a:result ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
-        let [it,got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
+        let [s:it,s:got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
     endif
 
     " Important, base debug log.
-    call s:msg(2,"⟁⟁ Callback ⟁⟁ °id° ≈≈", a:result, "←·→", (got_it ?
-                \ string(it[0])." ←·→ TPE ·".it[1]['type']."· BDY ·".it[1]['body']."·" : "≠"))
+    2UMsg °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:it[1]['type'].'· BDY ·'.s:it[1]['body'].'·' : '≠')
     echohl None
 
     " Should restore the command line?
@@ -216,7 +215,7 @@ func! UserMenu_MainCallback(id, result)
     call UserMenu_CleanupSesVars()
 
     " The menu has been canceled? (ESC, ^C, cursor move)
-    if !got_it
+    if !s:got_it
         if a:result > len(a:result)
             call s:msg(0, "Error: the index is too large →→ •••", a:result, ">",
                         \ len(s:current_menu), "•••")
@@ -226,17 +225,17 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message before the command?
-    if has_key(it[1],'smessage') 
-        call s:msg(4,UserMenu_ExpandVars(it[1]['smessage'])) 
+    if has_key(s:it[1],'smessage') 
+        call s:msg(4,UserMenu_ExpandVars(s:it[1]['smessage'])) 
     endif
 
     " Read the attached action specification and perform it.
-    if it[1]['type'] == 'cmd'
-        exe it[1]['body']
-    elseif it[1]['type'] == 'expr'
-        call eval(it[1]['body'])
-    elseif it[1]['type'] =~# '\v^norm(\!|)$'
-        exe it[1]['type'] it[1]['body']
+    if s:it[1]['type'] == 'cmd'
+        exe s:it[1]['body']
+    elseif s:it[1]['type'] == 'expr'
+        call eval(s:it[1]['body'])
+    elseif s:it[1]['type'] =~# '\v^norm(\!|)$'
+        exe s:it[1]['type'] s:it[1]['body']
     else
         call s:msg(0, "Unrecognized ·item·: type ⟸", it[1]['type'], "⟹")
     endif
@@ -501,7 +500,7 @@ vnoremap <expr> <F12> UserMenu_Start()
 cnoremap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
 onoremap <expr> <F12> UserMenu_Start()
-command! -nargs=+ -count=4 -bang -bar UMsg call s:msgcmdimpl(<count>,<q-bang>,<f-args>)
+command! -nargs=+ -count=4 -bang -bar UMsg call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
 hi def um_norm ctermfg=7
 hi def um_blue ctermfg=27
 hi def um_blue1 ctermfg=32
