@@ -303,13 +303,14 @@ endfunc " }}}
 " 5 - debug2        …
 func! s:msg(hl, ...)
     " Log only warnings and errors by default.
-    if a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
+    if a:hl != 7 && a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
         return
     endif
 
     " Make a copy of the input.
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
-    let hl = a:hl
+    if a:hl == 7 | let args = args[1:] | endif
+    let hl = a:hl == 7 ? 4 : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
     let start_idx = -1
