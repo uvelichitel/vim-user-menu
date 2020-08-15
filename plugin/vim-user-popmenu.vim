@@ -211,10 +211,12 @@ func! UserMenu_MainCallback(id, result)
     echohl None
 
     " Should restore the command line?
+    let had_cmd = 0
     if !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"))
         " TODO: restoring
         let @@ = UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")[1:]
         call feedkeys("\<C-U>:\<C-bslash>e@@\<CR>","n")
+	let had_cmd = 1
     endif
     call UserMenu_SetBufOrSesVar("user_menu_cmode_cmd", "")
     call UserMenu_CleanupSesVars()
