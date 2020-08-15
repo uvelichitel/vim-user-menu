@@ -317,10 +317,10 @@ func! s:msg(hl, ...)
         let arg = args[idx]
         " Unclosed paren?
         " Discriminate two special cases: (mode() and (mode(sub())
-        if arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^\(]*\([^)]*\)[^)]*\))$'
+        if arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
             let start_idx = idx
         " A free, closing paren?
-        elseif start_idx >= 0 && arg =~# '\v[^\(].*\)$' && arg !~ '\v\([^\)]*\)$'
+        elseif start_idx >= 0 && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
             call add(new_args,eval(join(args[start_idx:idx])))
             let start_idx = -1
             continue
