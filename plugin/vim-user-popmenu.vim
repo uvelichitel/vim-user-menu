@@ -193,7 +193,8 @@ func! UserMenu_Start()
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
-    return 'echo "'.escape(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),'"')."\""
+    return !empty(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd")) ?
+		\ 'echo "'.escape(UserMenu_GetBufOrSesVar("user_menu_cmode_cmd"),'"')."\"" : ""
 endfunc " }}}
 
 " FUNCTION: UserMenu_MainCallback() {{{
