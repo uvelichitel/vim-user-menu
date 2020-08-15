@@ -588,15 +588,25 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:timers = []
 let s:default_user_menu = [
-            \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
-            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let : !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open", message: "hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
-            \ [ "Open [vis]…", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… [msg] →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
-            \ [ "°° always canc keep °°", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd keep-menu-open"} ],
-            \ [ "•• NEW [norm] ••", #{ type: 'norm', body: "\<C-W>n", opts: "always-show cancel-ex-cmd"} ],
-            \ [ "•• Upcase Letters ••", #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
-            \ [ "•• Escape Command Line ••", #{ type: 'expr', body: "feedkeys('\<C-bslash>eescape(getcmdline(), \" \\\\\")\<CR>','n')", opts: ['only-in-ex'] } ],
-            \ [ "•• Experiment / Command Line ••", #{ type: 'expr', body: 'feedkeys(":Ex\<CR>","n")', opts: [] } ]
+            \ [ "° Save [insert]", #{ type: 'expr', body: 'SaveFile()',
+                \ opts: "only-in-insert", message: "hl:2:File {g:save_result}" } ],
+            \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
+                \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
+                    \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
+                \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
+            \ [ "° Open [Exp,vis]…", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "° Other… [Exp,s-msg]", #{ type: 'cmd', body: 'Ex', opts: "always-show",
+                \ smessage: "p:2:hl:um_lblue2:Launching the file explorer… In 2 seconds…"} ],
+            \ [ "° SomeExp [canc,keep]", #{ type: 'cmd', body: 'Ex',
+                \ opts: "cancel-ex-cmd keep-menu-open"} ],
+            \ [ "° NEW [type:norm,canc]", #{ type: 'norm', body: "\<C-W>n",
+                \ opts: "cancel-ex-cmd"} ],
+            \ [ "° NEW [type:keys,keep,msg]", #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
+                \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
+            \ [ "° Upcase Letters", #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
+            \ [ "° Escape The Command Line", #{ type: 'keys',
+                \ body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
+                \ opts: ['only-in-ex'] } ]
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
