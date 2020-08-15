@@ -548,6 +548,9 @@ hi def um_green2 ctermfg=35
 hi def um_lgreen2 ctermfg=82
 hi def um_green3 ctermfg=40
 hi def um_orange ctermfg=172
+hi def UMPmenu ctermfg=220 ctermbg=darkblue
+hi PopupSelected ctermfg=220 ctermbg=blue
+hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:default_user_menu = [
             \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
