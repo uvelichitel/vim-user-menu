@@ -1,11 +1,3 @@
-let s:default_user_menu = [
-            \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
-            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal keep-menu-open" } ],
-            \ [ "Open …", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "← Other… →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
-            \ [ "∧∧ YET another… ∧∧", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd"} ]
-            \ ]
-
 " ·•« User Menu Plugin »•· ·•« zphere-zsh/vim-user-popmenu »•·
 " Copyright (c) 2020 « Sebastian Gniazdowski ».
 " License: « Gnu GPL v3 ».
@@ -461,6 +453,14 @@ hi def um_green2 ctermfg=35
 hi def um_lgreen2 ctermfg=82
 hi def um_green3 ctermfg=40
 hi def um_orange ctermfg=172
+
+let s:default_user_menu = [
+            \ [ "Save", #{ type: 'cmd', body: ':w', opts: "only-in-insert,always-something" } ],
+            \ [ "Toggle completion {g:vichord_summaric_completion_time}", #{ type: 'code', body: 'let g:vichord_search_in_let = 1 - g:vichord_search_in_let', opts: "only-in-normal keep-menu-open" } ],
+            \ [ "Open …", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "← Other… →", #{ type: 'cmd', body: 'Ex', opts: "always-show", message: "hl:um_lblue2:Launched the file explorer."} ],
+            \ [ "∧∧ YET another… ∧∧", #{ type: 'cmd', body: 'Ex', opts: "always-show cancel-ex-cmd"} ]
+            \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
 
