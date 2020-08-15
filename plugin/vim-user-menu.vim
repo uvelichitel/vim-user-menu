@@ -233,12 +233,14 @@ func! UserMenu_MainCallback(id, result)
     call UserMenu_DeployUserMessage(s:it[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
-    if s:it[1]['type'] == 'cmd'
-        exe s:it[1]['body']
-    elseif s:it[1]['type'] == 'expr'
-        call eval(s:it[1]['body'])
-    elseif s:it[1]['type'] =~# '\v^norm(\!|)$'
-        exe s:it[1]['type'] s:it[1]['body']
+    if s:type == 'cmd'
+        exe s:body
+    elseif s:type == 'expr'
+        call eval(s:body)
+    elseif s:type =~# '\v^norm(\!|)$'
+        exe s:type s:body
+    elseif s:type == 'keys'
+        call feedkeys(s:body,"n")
     else
         UMsg! Unrecognized ·item· type: • s:type •
     endif
