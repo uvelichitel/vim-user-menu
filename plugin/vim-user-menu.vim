@@ -458,7 +458,7 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_ExpandVars {{{
 func! UserMenu_ExpandVars(text)
-    return substitute(a:text, '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=eval(submatch(1))', '')
+    return substitute(a:text, '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=(exists(submatch(1)) ? eval(submatch(1)) : submatch(1))', '')
 endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
