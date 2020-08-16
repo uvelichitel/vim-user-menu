@@ -458,7 +458,7 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_ExpandVars {{{
 func! UserMenu_ExpandVars(text)
-    return substitute(a:text, '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=(exists(submatch(1)) ? eval(submatch(1)) : submatch(1))', '')
+    return substitute(a:text, '\v\{(([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=(exists(submatch(1)) ? eval(submatch(1)) : submatch(1))', '')
 endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
@@ -574,6 +574,8 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:timers = []
 let s:default_user_menu = [
+            \ [ "° Quit Vim",
+                       \ #{ type: 'cmds', body: ':qa!', smessage: "p:2:hl:2:Quitting Vim … {&autowrite}" } ],
             \ [ "° Save [insert]",
                        \ #{ type: 'expr', body: 'UserMenu_SaveFile()',
                             \ opts: "only-in-insert", message: "hl:2:File {g:save_result}" } ],
