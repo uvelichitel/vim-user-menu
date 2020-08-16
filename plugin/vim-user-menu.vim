@@ -264,13 +264,16 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
         if a:init >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
-            call add(s:timers, timer_start(a:0 ? a:1 : 150, function("s:deferedUserMessage")))
+            call add(s:timers, timer_start(a:0 ? a:1 : 110, function("s:deferedUserMessage")))
         else
-            7PRINT UserMenu_ExpandVars(s:msg)
-            redraw
-            if s:pause =~ '\v^\d+$' && s:pause > 0
-                call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
-                exe "sleep" s:pause
+            let s:msg = UserMenu_ExpandVars(s:msg)
+            if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
+                7PRINT s:msg
+                redraw
+                if s:pause =~ '\v^\d+$' && s:pause > 0
+                    call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
+                    exe "sleep" s:pause
+                endif
             endif
         endif
     endif
