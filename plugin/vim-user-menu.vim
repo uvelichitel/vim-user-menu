@@ -577,22 +577,29 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:timers = []
 let s:default_user_menu = [
-            \ [ "° Save All & Quit",
+            \ [ "° Save all & Quit",
                        \ #{ type: 'cmds', body: ':q', smessage: "p:4:hl:2:Quitting Vim
                            \ … {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
                                \ modified: {&modified}…" } ],
-            \ [ "° Save [insert]",
-                       \ #{ type: 'expr', body: 'UserMenu_SaveFile()',
-                            \ opts: "only-in-insert", message: "hl:2:File {g:save_result}" } ],
+            \ [ "° Save current buffer",
+                       \ #{ type: 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
+                            \ smessage:'p:4:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
+                                \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
+                                    \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
+                                    \ saved under: " . expand("%")] | endif }
+                                \{g:_m}',
+                            \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
                             \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
-            \ [ "° Open [Exp,vis]…",
-                        \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "° Open [Exp,vis,msgs]…",
+                        \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual",
+                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
+                            \ message: "p:2:hl:gold:Explorer started correctly."} ],
             \ [ "° Other… [Exp,s-msg]",
-                        \ #{ type: 'cmds', body: 'Ex', opts: "always-show",
+                        \ #{ type: 'cmds', body: 'Ex', opts: "",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
                             \ message: "p:2:hl:gold:Explorer started correctly."} ],
             \ [ "° SomeExp [exit-ex,keep]",
