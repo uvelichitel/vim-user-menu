@@ -164,8 +164,12 @@ func! UserMenu_Start()
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
-    return !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd")) ?
-		\ 'echo "'.escape(UserMenu_BufOrSesVar("user_menu_cmode_cmd"),'"')."\"" : ""
+    let s:msg = UserMenu_BufOrSesVar("user_menu_cmode_cmd")
+    if !empty(s:msg)
+        let s:msg = "hl:None:" . s:msg
+        call UserMenu_DeployUserMessage(s:, 'msg', 1)
+    endif
+    return ""
 endfunc " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
