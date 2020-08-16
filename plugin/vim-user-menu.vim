@@ -288,7 +288,7 @@ func! UserMenu_KeyFilter(id,key)
             3PRINT mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
         elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3PRINT mode() ←←← s:key →→→ echo/fake-cmds-line ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
             PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
         else
@@ -585,16 +585,20 @@ let s:default_user_menu = [
                         \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual"} ],
             \ [ "° Other… [Exp,s-msg]",
                         \ #{ type: 'cmds', body: 'Ex', opts: "always-show",
-                            \ smessage: "p:2:hl:um_lblue2:Launching file explorer… In 2 seconds…"} ],
+                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
+                            \ message: "p:2:hl:gold:Explorer started correctly."} ],
             \ [ "° SomeExp [exit-ex,keep]",
                         \ #{ type: 'cmds', body: 'Ex', opts: "exit-to-norm keep-menu-open"} ],
             \ [ "° NEW [type:norm,exit-ex]",
-                        \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm"} ],
+                        \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm",
+                            \ message: "p:4:hl:2:New buffer created."} ],
             \ [ "° NEW [type:keys,keep,msg]",
                         \ #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
                             \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
             \ [ "° Upcase Letters",
-                        \ #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
+                        \ #{ type: 'norm', body: "U", opts: "only-in-visual",
+                            \ smessage:"p:3:All selected letters will soon be upcase…",
+                            \ message:"p:3:All selected letters are now upcase."} ],
             \ [ "° Escape The Command Line",
                         \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
                             \ opts: ['only-in-ex'] } ]
