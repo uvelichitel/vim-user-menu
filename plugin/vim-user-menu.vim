@@ -467,7 +467,7 @@ endfunc
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
 func! UserMenu_GetPrefixValue(pfx,msg)
     let mres = matchlist(a:msg,'\v^'.a:pfx.':([^:]*):(.*)$')
-    return empty(mres) ? [a:msg,0] : mres[1:2]
+    return empty(mres) ? [0,a:msg] : mres[1:2]
 endfunc
 " }}}
 " FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
