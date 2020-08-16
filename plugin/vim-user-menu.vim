@@ -105,6 +105,11 @@ func! UserMenu_Start()
 	call filter( opts_in, "!empty(extend(entry[2], { v:val : 1 }))" )
 	let opts = entry[2]
 '
+        " Verify show-if
+        if has_key(entry[1], 'show-if')
+            if !eval(entry[1]['show-if']) | continue | endif
+        endif
+
         " The item shown only when the menu started in insert mode?
         if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
             if mode() !~# '\v^(R[cvx]=|i[cx]=)' | continue | endif
@@ -589,7 +594,8 @@ let s:default_user_menu = [
                                 \{g:_m}',
                             \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
-                        \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
+                        \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
+                            \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:2:hl:lblue2:New state: {g:vichord_search_in_let}." } ],
             \ [ "° Open [Exp,vis,msgs]…",
