@@ -165,7 +165,7 @@ func! UserMenu_Start()
                 \ close: 'button',
                 \ highlight: 'UMPmenu',
                 \ cursorline: 1,
-                \ borderhighlight: [ 'um_yellow', 'um_yellow', 'um_yellow', 'um_yellow' ],
+                \ borderhighlight: [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
@@ -376,7 +376,7 @@ func! s:msg(hl, ...)
     let args = new_args
 
     " Finally: detect any hl:…: prefix, select the color, output the message.
-    let c = ["Error", "WarningMsg", "um_gold", "um_green3", "um_blue", "None"]
+    let c = ["Error", "WarningMsg", "um_gold", "um_green4", "um_blue", "None"]
     let mres = matchlist(args[0],'\v^hl:([^:]+):(.*)$')
     let [hl,a1] = !empty(mres) ? [ (mres[1] =~# '^\d\+$' ? c[mres[1]] : mres[1]), mres[2] ]
                 \ : [ c[hl], args[0] ]
@@ -581,9 +581,11 @@ hi def um_lyellow2 ctermfg=221
 hi def um_lyellow3 ctermfg=226
 hi def um_green ctermfg=green
 hi def um_lgreen ctermfg=lightgreen
+hi def um_lgreen2 ctermfg=118
+hi def um_lgreen3 ctermfg=154
 hi def um_green2 ctermfg=35
-hi def um_lgreen2 ctermfg=82
 hi def um_green3 ctermfg=40
+hi def um_green4 ctermfg=82
 hi def UMPmenu ctermfg=220 ctermbg=darkblue
 hi PopupSelected ctermfg=220 ctermbg=blue
 hi PmenuSel ctermfg=220 ctermbg=blue
@@ -604,7 +606,7 @@ let s:default_user_menu = [
                             \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
             \ [ "° Save all & Quit",
                        \ #{ type: 'cmds', body: ':q', smessage: "p:4:hl:2:Quitting Vim
-                           \ … {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
+                           \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
                                \ modified: {&modified}…" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
