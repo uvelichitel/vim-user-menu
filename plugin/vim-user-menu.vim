@@ -5,8 +5,8 @@
 " Example user-menu «list» of «dictionaries»:
 " 
 " let g:user_menu = [
-"     \ [ "Reload",      #{ type: "cmd",  body: ":edit!" } ],
-"     \ [ "Quit Vim",    #{ type: "cmd",  body: ":qa!" } ],
+"     \ [ "Reload",      #{ type: "cmds", body: ":edit!" } ],
+"     \ [ "Quit Vim",    #{ type: "cmds", body: ":qa!" } ],
 "     \ [ "New Window",  #{ type: "keys", body: "\<C-w>n" } ],
 "     \ [ "Load passwd", #{ type: "expr", body: "LoadPasswd()" } ]
 " \ ]
@@ -21,10 +21,10 @@
 " 
 " The meaning of the dictionary keys:
 "
-" – The "type" is one of: "cmd", "expr", "norm", "keys", "other-item".
+" – The "type" is one of: "cmds", "expr", "norm", "keys", "other-item".
 "
 " – The "{command body}" is either:
-"   – A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
+"   – A Ex command, like ":w" or "w". Type: "cmds" causes such command to be
 "     run.
 "   – An expression code, like, e.g.: "MyFunction()". Type: "expr".
 "   – A sequence of norm commands, like, e.g.: "\<C-W>gf". Type: "norm" and
@@ -41,14 +41,14 @@
 "     \   message: "message-text",
 "     \   prompt: "prompt-text",
 "     \   chain: "text-or-id",
-"     \   body2: "additional command body of type <cmd>",
+"     \   body2: "additional command body of type <cmds>",
 "     \   predic: "expression",
 "     \ }
 " \ ] ]
 "   
 " – The "options" is a comma- or space-separated list of subset of these
 "   options: "keep-menu-open", "only-in-normal", "only-in-insert",
-"   "only-in-visual", "only-in-cmd", "only-in-sh", "always-show",
+"   "only-in-visual", "only-in-cmds", "only-in-sh", "always-show",
 "   "exit-to-norm".
 "
 "   – The "keep-menu-open" option causes the menu to be reopened immediately
@@ -84,8 +84,8 @@
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
-    let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
-    PRINT °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd):'')
+    let s:cmds = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
+    PRINT °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call UserMenu_EnsureInit()
 
@@ -197,7 +197,7 @@ func! UserMenu_MainCallback(id, result)
     call UserMenu_DeployUserMessage(s:it[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
-    if s:type == 'cmd'
+    if s:type == 'cmds'
         exe s:body
     elseif s:type == 'expr'
         call eval(s:body)
@@ -288,7 +288,7 @@ func! UserMenu_KeyFilter(id,key)
             3PRINT mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
         elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3PRINT mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT mode() ←←← s:key →→→ echo/fake-cmds-line ··· user_menu_init_cmd_mode s:tryb ···
             PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
         else
@@ -468,8 +468,8 @@ func! UserMenu_GetPrefixValue(pfx,msg)
 endfunc
 " }}}
 " FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
-func! UserMenu_RestoreCmdLineFrom(cmd)
-    call feedkeys(a:cmd,"n")
+func! UserMenu_RestoreCmdLineFrom(cmds)
+    call feedkeys(a:cmds,"n")
 endfunc
 " }}}
 
@@ -582,12 +582,12 @@ let s:default_user_menu = [
                             \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
                             \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
             \ [ "° Open [Exp,vis]…",
-                        \ #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+                        \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual"} ],
             \ [ "° Other… [Exp,s-msg]",
-                        \ #{ type: 'cmd', body: 'Ex', opts: "always-show",
+                        \ #{ type: 'cmds', body: 'Ex', opts: "always-show",
                             \ smessage: "p:2:hl:um_lblue2:Launching file explorer… In 2 seconds…"} ],
             \ [ "° SomeExp [exit-ex,keep]",
-                        \ #{ type: 'cmd', body: 'Ex', opts: "exit-to-norm keep-menu-open"} ],
+                        \ #{ type: 'cmds', body: 'Ex', opts: "exit-to-norm keep-menu-open"} ],
             \ [ "° NEW [type:norm,exit-ex]",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm"} ],
             \ [ "° NEW [type:keys,keep,msg]",
