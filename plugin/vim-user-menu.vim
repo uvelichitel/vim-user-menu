@@ -85,7 +85,8 @@
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
     let s:cmds = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
-    PRINT °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
+    let s:course = mode()
+    PRINT °°° UserMenu_Start °°° Mode: s:course ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call UserMenu_EnsureInit()
 
@@ -112,23 +113,23 @@ func! UserMenu_Start()
 
         " The item shown only when the menu started in insert mode?
         if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
-            if mode() !~# '\v^(R[cvx]=|i[cx]=)' | continue | endif
+            if s:course !~# '\v^(R[cvx]=|i[cx]=)' | continue | endif
         endif
         " The item shown only when the menu started in normal mode?
         if has_key(l:opts, 'only-in-normal') && !has_key(l:opts,'always-show')
-            if mode() !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | continue | endif
+            if s:course !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | continue | endif
         endif
         " The item shown only when the menu started in visual mode?
         if has_key(l:opts, 'only-in-visual') && !has_key(l:opts,'always-show')
-            if mode() !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | continue | endif
+            if s:course !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | continue | endif
         endif
         " The item shown only when the menu started when entering commands?
         if has_key(l:opts, 'only-in-ex') && !has_key(l:opts,'always-show')
-            if mode() !~# '\v^c[ve]=' | continue | endif
+            if s:course !~# '\v^c[ve]=' | continue | endif
         endif
         " The item shown only when the menu started when a job is running?
         if has_key(l:opts, 'only-in-sh') && !has_key(l:opts,'always-show')
-            if mode() !~# '\v^[\!t]$' | continue | endif
+            if s:course !~# '\v^[\!t]$' | continue | endif
         endif
 
         " Support embedding variables in the text via {var}.
@@ -138,7 +139,7 @@ func! UserMenu_Start()
     endfor
 
     " Special actions needed for command mode.
-    if mode() =~# '\v^c[ve]='
+    if s:course =~# '\v^c[ve]='
         call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.getcmdline())
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 1)
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
@@ -293,28 +294,29 @@ func! UserMenu_KeyFilter(id,key)
     redraw
     let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
-    if mode() =~# '\v^c[ve]=' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
+    let s:course = mode()
+    if s:course =~# '\v^c[ve]=' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
     if s:tryb > 0
         if a:key == "\<CR>"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
-            3PRINT mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:course ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
         elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3PRINT mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:course ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
             PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
         else
-            3PRINT mode() ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:course ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
         endif
         " Don't consume the key – pass it through, unless it's <Up>.
         redraw
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let s:result = popup_filter_menu(a:id, a:key)
-        3PRINT mode() ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
-                    \ s:tryb °°° ret ((mode()=~#'\v^c[ve]=') ? 'forced-1' : s:result) °°°
+        3PRINT s:course ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+                    \ s:tryb °°° ret ((s:course=~#'\v^c[ve]=') ? 'forced-1' : s:result) °°°
         redraw
-        return (mode() =~# '\v^c[ve]=') ? 1 : s:result
+        return (s:course =~# '\v^c[ve]=') ? 1 : s:result
     endif
 endfunc " }}}
 " FUNCTION: s:msg(hl,...) {{{
