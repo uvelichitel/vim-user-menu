@@ -150,6 +150,7 @@ func! UserMenu_Start(way)
         call feedkeys("\<Up>","n")
     endif
 
+    let state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
@@ -159,7 +160,7 @@ func! UserMenu_Start(way)
                 \ border: [ ],
                 \ fixed: 0,
                 \ flip: 1,
-                \ title: ' VIM User Menu ',
+                \ title: ' VIM User Menu ≈ ' . state_to_desc[s:way] . ' ≈ ',
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
@@ -475,7 +476,7 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_ExpandVars {{{
 func! UserMenu_ExpandVars(text)
-    return substitute(a:text, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*))\}', '\=((submatch(1)[0] == ":") ? execute(submatch(1))[1:0] : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+    return substitute(a:text, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
 endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
@@ -616,6 +617,11 @@ let s:default_user_menu = [
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:2:hl:lblue2:New state: {g:vichord_search_in_let}." } ],
+            \ [ "° Toggle Auto Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
+                        \ #{ show-if: "exists('g:apc_loaded')",
+                            \ type: 'cmds', body: 'if get(b:,"apc_enable",0) | ApcDisable |
+                                \ else | ApcEnable | endif', opts: "keep-menu-open",
+                            \ message: "p:2:hl:lblue2:New state: {b:apc_enable}." } ],
             \ [ "° New buffer",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:hl:2:New buffer created."} ],
