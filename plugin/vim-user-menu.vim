@@ -590,8 +590,8 @@ let s:default_user_menu = [
                             \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
-                            \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
-                            \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
+                            \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
+                            \ message: "p:2:hl:lblue2:New state: {g:vichord_search_in_let}." } ],
             \ [ "° Open [Exp,vis,msgs]…",
                         \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
