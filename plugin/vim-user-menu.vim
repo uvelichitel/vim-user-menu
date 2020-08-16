@@ -638,13 +638,22 @@ let s:default_user_menu = [
 
 func! UserMenu_StartSelectEscape()
     let s:y = maparg("y", "v")
+    let s:v = maparg("v", "v")
     vnoremap y y:<C-R>=UserMenu_EscapeYForSubst(@@)<CR>
-    call feedkeys("v","n")
+    vnoremap v <ESC>gv
+    call feedkeys("v")
 endfunc
 
 func! UserMenu_EscapeYForSubst(sel)
     if !empty(s:y)
         exe 'vnoremap y ' . s:y
+    else
+        vunmap y
+    endif
+    if !empty(s:v)
+        exe 'vnoremap v ' . s:v
+    else
+        vunmap y
     endif
     return 's/\V'.escape(a:sel,'/').'/'
 endfunc
