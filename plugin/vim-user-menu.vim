@@ -610,39 +610,3 @@ let s:default_user_menu = [
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
-
-"""""""""""""""""" EXPERIMENTAL FUNCTIONS
-
-" FUNCTION: UserMenu_SaveFile()
-func! UserMenu_SaveFile()
-    let s:save_buf = bufnr()
-    let s:prompt_buf = bufadd('SaveFile')
-    call feedkeys("\<C-w>n", "n")
-    call bufload(s:prompt_buf)
-    set bt=prompt
-    call prompt_setcallback(s:prompt_buf, function('s:UserMenu_SaveFileCallback'))
-    startinsert
-endfunc
-" }}}
-func! s:UserMenu_SaveFileCallback(text)
-    if a:text =~ '\v^\s*$'
-        call append(line('$') - 1, 'Please enter a file path to which to save the bufer.')
-        startinsert
-    else
-        call feedkeys("\<C-w>w", "n")
-        exe 'w!' a:text
-        call feedkeys("\<C-w>w", "n")
-        call append(line('$') - 1, 'Stored under: "' . a:text . '"')
-        " Reset 'modified' to allow the buffer to be closed.
-        set nomodified
-        let s:buf_to_close = s:prompt_buf
-        call add(s:timers, timer_start(2000, function("s:SaveFile_CloseBufferCallback")))
-    endif
-endfunc
-
-func! s:UserMenu_CloseBufferCallback(timer)
-    call filter( s:timers, 'v:val != a:timer' )
-    exe 'bw!' s:buf_to_close
-endfunc
-
-" vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
