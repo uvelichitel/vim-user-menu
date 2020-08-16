@@ -559,7 +559,6 @@ hi def um_blue1 ctermfg=32
 hi def um_blue2 ctermfg=75
 hi def um_lblue ctermfg=50
 hi def um_lblue2 ctermfg=75 cterm=bold
-hi def um_orange ctermfg=172
 hi def um_gold ctermfg=220
 hi def um_yellow ctermfg=190
 hi def um_lyellow ctermfg=yellow cterm=bold
@@ -570,7 +569,6 @@ hi def um_lgreen ctermfg=lightgreen
 hi def um_green2 ctermfg=35
 hi def um_lgreen2 ctermfg=82
 hi def um_green3 ctermfg=40
-hi def um_orange ctermfg=172
 hi def UMPmenu ctermfg=220 ctermbg=darkblue
 hi PopupSelected ctermfg=220 ctermbg=blue
 hi PmenuSel ctermfg=220 ctermbg=blue
