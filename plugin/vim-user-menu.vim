@@ -55,7 +55,7 @@
 " – The "options" is a comma- or space-separated list of subset of these
 "   options: "keep-menu-open", "only-in-normal", "only-in-insert",
 "   "only-in-visual", "only-in-cmd", "only-in-sh", "always-show",
-"   "cancel-ex-cmd".
+"   "exit-to-norm".
 "
 "   – The "keep-menu-open" option causes the menu to be reopened immediately
 "     after the selected command will finish executing.
@@ -64,7 +64,7 @@
 "     option is specified, in which case the item is being always displayed,
 "     however it's executed *only* in the given mode (an error is displayed if
 "     the mode is wrong).
-"   – The "cancel-ex-cmd" option causes the currently typed-in command (i.e.:
+"   – The "exit-to-norm" option causes the currently typed-in command (i.e.:
 "     the text: ":… text …" in the command line window) to be discarded when the
 "     menu is started (otherwise the text/the command is being always restored
 "     after the menu closes → right before executing the selected command; this
@@ -252,11 +252,11 @@ func! UserMenu_MainCallback(id, result)
 
     " Reopen the menu?
     if has_key(l:opts, 'keep-menu-open')
-        call add(s:timers, timer_start(750, function("s:deferedMenuStart")))
+        call add(s:timers, timer_start(500, function("s:deferedMenuStart")))
     endif
 
     " Cancel ex command?
-    if has_key(l:opts, 'cancel-ex-cmd') && had_cmd
+    if has_key(l:opts, 'exit-to-norm') && had_cmd
 	call feedkeys("\<C-U>\<BS>","n")
     endif
 
@@ -593,27 +593,66 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:timers = []
 let s:default_user_menu = [
-            \ [ "° Save [insert]", #{ type: 'expr', body: 'SaveFile()',
-                \ opts: "only-in-insert", message: "hl:2:File {g:save_result}" } ],
+            \ [ "° Save [insert]",
+                       \ #{ type: 'expr', body: 'UserMenu_SaveFile()',
+                            \ opts: "only-in-insert", message: "hl:2:File {g:save_result}" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
-                \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
-                    \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
-                \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
-            \ [ "° Open [Exp,vis]…", #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
-            \ [ "° Other… [Exp,s-msg]", #{ type: 'cmd', body: 'Ex', opts: "always-show",
-                \ smessage: "p:2:hl:um_lblue2:Launching the file explorer… In 2 seconds…"} ],
-            \ [ "° SomeExp [canc,keep]", #{ type: 'cmd', body: 'Ex',
-                \ opts: "cancel-ex-cmd keep-menu-open"} ],
-            \ [ "° NEW [type:norm,canc]", #{ type: 'norm', body: "\<C-W>n",
-                \ opts: "cancel-ex-cmd"} ],
-            \ [ "° NEW [type:keys,keep,msg]", #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
-                \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
-            \ [ "° Upcase Letters", #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
-            \ [ "° Escape The Command Line", #{ type: 'keys',
-                \ body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
-                \ opts: ['only-in-ex'] } ]
+                        \ #{ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
+                            \ !g:vichord_search_in_let })', opts: "only-in-normal keep-menu-open",
+                            \ message: "p:2:hl:lblue2:Current state: {g:vichord_search_in_let}." } ],
+            \ [ "° Open [Exp,vis]…",
+                        \ #{ type: 'cmd', body: 'Ex', opts: "only-in-visual"} ],
+            \ [ "° Other… [Exp,s-msg]",
+                        \ #{ type: 'cmd', body: 'Ex', opts: "always-show",
+                            \ smessage: "p:2:hl:um_lblue2:Launching file explorer… In 2 seconds…"} ],
+            \ [ "° SomeExp [exit-ex,keep]",
+                        \ #{ type: 'cmd', body: 'Ex', opts: "exit-to-norm keep-menu-open"} ],
+            \ [ "° NEW [type:norm,exit-ex]",
+                        \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm"} ],
+            \ [ "° NEW [type:keys,keep,msg]",
+                        \ #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
+                            \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
+            \ [ "° Upcase Letters",
+                        \ #{ type: 'norm', body: "U", opts: "only-in-visual"} ],
+            \ [ "° Escape The Command Line",
+                        \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
+                            \ opts: ['only-in-ex'] } ]
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
+
+"""""""""""""""""" EXPERIMENTAL FUNCTIONS
+
+" FUNCTION: UserMenu_SaveFile()
+func! UserMenu_SaveFile()
+    let s:save_buf = bufnr()
+    let s:prompt_buf = bufadd('SaveFile')
+    call feedkeys("\<C-w>n", "n")
+    call bufload(s:prompt_buf)
+    set bt=prompt
+    call prompt_setcallback(s:prompt_buf, function('s:UserMenu_SaveFileCallback'))
+    startinsert
+endfunc
+" }}}
+func! s:UserMenu_SaveFileCallback(text)
+    if a:text =~ '\v^\s*$'
+        call append(line('$') - 1, 'Please enter a file path to which to save the bufer.')
+        startinsert
+    else
+        call feedkeys("\<C-w>w", "n")
+        exe 'w!' a:text
+        call feedkeys("\<C-w>w", "n")
+        call append(line('$') - 1, 'Stored under: "' . a:text . '"')
+        " Reset 'modified' to allow the buffer to be closed.
+        set nomodified
+        let s:buf_to_close = s:prompt_buf
+        call add(s:timers, timer_start(2000, function("s:SaveFile_CloseBufferCallback")))
+    endif
+endfunc
+
+func! s:UserMenu_CloseBufferCallback(timer)
+    call filter( s:timers, 'v:val != a:timer' )
+    exe 'bw!' s:buf_to_close
+endfunc
 
 " vim:set ft=vim tw=80 et sw=4 sts=4 foldmethod=marker:
