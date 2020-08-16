@@ -47,13 +47,13 @@
 " \ ] ]
 "   
 " – The "options" is a comma- or space-separated list of subset of these
-"   options: "keep-menu-open", "only-in-normal", "only-in-insert",
-"   "only-in-visual", "only-in-cmds", "only-in-sh", "always-show",
+"   options: "keep-menu-open", "in-normal", "in-insert",
+"   "in-visual", "in-cmds", "in-sh", "always-show",
 "   "exit-to-norm".
 "
 "   – The "keep-menu-open" option causes the menu to be reopened immediately
 "     after the selected command will finish executing.
-"   – The "only-in-…" options show the item only if the menu is started in the
+"   – The "in-…" options show the item only if the menu is started in the
 "     given mode, for example when inserting text, unless also the "always-show"
 "     option is specified, in which case the item is being always displayed,
 "     however it's executed *only* in the given mode (an error is displayed if
@@ -113,23 +113,23 @@ func! UserMenu_Start(way)
 
         let [reject,accept] = [ 0, 0 ]
         " The item shown only when the menu started in insert mode?
-        if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
+        if has_key(l:opts, 'in-insert') && !has_key(l:opts,'always-show')
             if s:way !~# '\v^(R[cvx]=|i[cx]=)' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in normal mode?
-        if has_key(l:opts, 'only-in-normal') && !has_key(l:opts,'always-show')
+        if has_key(l:opts, 'in-normal') && !has_key(l:opts,'always-show')
             if s:way !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in visual mode?
-        if has_key(l:opts, 'only-in-visual') && !has_key(l:opts,'always-show')
+        if has_key(l:opts, 'in-visual') && !has_key(l:opts,'always-show')
             if s:way !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when entering commands?
-        if has_key(l:opts, 'only-in-ex') && !has_key(l:opts,'always-show')
+        if has_key(l:opts, 'in-ex') && !has_key(l:opts,'always-show')
             if s:way !~# '\v^c[ve]=' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when a job is running?
-        if has_key(l:opts, 'only-in-sh') && !has_key(l:opts,'always-show')
+        if has_key(l:opts, 'in-sh') && !has_key(l:opts,'always-show')
             if s:way !~# '\v^[\!t]$' | let reject += 1 | else | let accept += 1 | endif
         endif
 
@@ -595,7 +595,7 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 let s:timers = []
 let s:default_user_menu = [
             \ [ "° Open …",
-                        \ #{ type: 'cmds', body: ':Ex', opts: "",
+                        \ #{ type: 'cmds', body: ':Ex', opts: "in-normal",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
                             \ message: "p:2:hl:gold:Explorer started correctly."} ],
             \ [ "° Save current buffer",
@@ -605,35 +605,35 @@ let s:default_user_menu = [
                                     \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
                                     \ saved under: " . expand("%")] | endif }
                                 \{g:_m}',
-                            \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
+                            \ opts: "in-normal", message: "p:2:hl:2:{g:_sr}" } ],
             \ [ "° Save all & Quit",
                        \ #{ type: 'cmds', body: ':q', smessage: "p:4:hl:2:Quitting Vim
                            \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ modified: {&modified}…" } ],
+                               \ modified: {&modified}…", opts: "in-normal" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:2:hl:lblue2:New state: {g:vichord_search_in_let}." } ],
             \ [ "° New buffer",
-                        \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm",
+                        \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:hl:2:New buffer created."} ],
             \ [ "° Use visual selection in s/…/…/ escaped…",
                         \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/')\<CR>
-                            \:%s/\\V\<C-R>\"/", opts: "only-in-visual",
+                            \:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:3:The selection has been escaped."} ],
             \ [ "° Select text and use in s/…/…/ escaped…",
                         \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
-                            \ opts: "only-in-normal only-in-visual",
+                            \ opts: "in-normal in-visual",
                             \ smessage:"p:2:Select some text and YANK to get to :s/…/…"} ],
-            \ [ "° Upcase Letters",
-                        \ #{ type: 'norm', body: "U", opts: "only-in-visual",
-                            \ smessage:"p:3:All selected letters will soon be upcase…",
-                            \ message:"p:3:All selected letters are now upcase."} ],
-            \ [ "° Escape The Command Line",
+            \ [ "° Upcase _front_ letters in words",
+                        \ #{ type: 'norm', body: ":s/\\%V\\<[a-z]/\\=toupper(submatch(0))/g\<CR>",
+                            \ opts: "in-visual",
+                            \ message:"p:1:All selected front letters are now upcase."} ],
+            \ [ "° Escape the command line",
                         \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
-                            \ opts: ['only-in-ex'] } ]
+                            \ opts: ['in-ex'] } ]
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
