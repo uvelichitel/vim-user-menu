@@ -618,6 +618,14 @@ let s:default_user_menu = [
             \ [ "° NEW [type:keys,keep,msg]",
                         \ #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
                             \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
+            \ [ "° Use visual selection in s/…/…/ escaped…",
+                        \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/')\<CR>
+                            \:%s/\\V\<C-R>\"/", opts: "only-in-visual",
+                            \ message:"p:3:The selection has been escaped."} ],
+            \ [ "° Select text and use in s/…/…/ escaped…",
+                        \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
+                            \ opts: "only-in-normal",
+                            \ smessage:"p:2:Select some text and YANK to get to :s/…/…"} ],
             \ [ "° Upcase Letters",
                         \ #{ type: 'norm', body: "U", opts: "only-in-visual",
                             \ smessage:"p:3:All selected letters will soon be upcase…",
@@ -628,3 +636,20 @@ let s:default_user_menu = [
             \ ]
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
+
+"""""""""""""""""" IN-MENU USE FUNCTIONS {{{
+
+func! UserMenu_StartSelectEscape()
+    let s:y = maparg("y", "v")
+    vnoremap y y:<C-R>=UserMenu_EscapeYForSubst(@@)<CR>
+    call feedkeys("v","n")
+endfunc
+
+func! UserMenu_EscapeYForSubst(sel)
+    if !empty(s:y)
+        exe 'vnoremap y ' . s:y
+    endif
+    return 's/\V'.escape(a:sel,'/').'/'
+endfunc
+
+"""""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
