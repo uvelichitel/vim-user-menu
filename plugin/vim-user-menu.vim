@@ -83,10 +83,10 @@
 " 
 
 " FUNCTION: UserMenu_Start() {{{
-func! UserMenu_Start()
+func! UserMenu_Start(way)
     let s:cmds = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
-    let s:course = mode()
-    PRINT °°° UserMenu_Start °°° Mode: s:course ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
+    let s:way = a:way
+    PRINT °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call UserMenu_EnsureInit()
 
@@ -114,23 +114,23 @@ func! UserMenu_Start()
         let [reject,accept] = [ 0, 0 ]
         " The item shown only when the menu started in insert mode?
         if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^(R[cvx]=|i[cx]=)' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^(R[cvx]=|i[cx]=)' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in normal mode?
         if has_key(l:opts, 'only-in-normal') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in visual mode?
         if has_key(l:opts, 'only-in-visual') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when entering commands?
         if has_key(l:opts, 'only-in-ex') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^c[ve]=' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^c[ve]=' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when a job is running?
         if has_key(l:opts, 'only-in-sh') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^[\!t]$' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^[\!t]$' | let reject += 1 | else | let accept += 1 | endif
         endif
 
         if reject && ! accept
@@ -143,7 +143,7 @@ func! UserMenu_Start()
     endfor
 
     " Special actions needed for command mode.
-    if s:course =~# '\v^c[ve]='
+    if s:way == 'c'
         call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.getcmdline())
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 1)
         call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
@@ -298,29 +298,28 @@ func! UserMenu_KeyFilter(id,key)
     redraw
     let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
-    let s:course = mode()
-    if s:course =~# '\v^c[ve]=' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
+    if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
     if s:tryb > 0
         if a:key == "\<CR>"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
-            3PRINT s:course ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:way ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
         elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3PRINT s:course ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:way ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
             PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
         else
-            3PRINT s:course ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT s:way ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
         endif
         " Don't consume the key – pass it through, unless it's <Up>.
         redraw
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let s:result = popup_filter_menu(a:id, a:key)
-        3PRINT s:course ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
-                    \ s:tryb °°° ret ((s:course=~#'\v^c[ve]=') ? 'forced-1' : s:result) °°°
+        3PRINT s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+                    \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
         redraw
-        return (s:course =~# '\v^c[ve]=') ? 1 : s:result
+        return s:result
     endif
 endfunc " }}}
 " FUNCTION: s:msg(hl,...) {{{
@@ -402,7 +401,7 @@ endfunc
 " FUNCTION: s:deferedMenuStart(timer) {{{
 func! s:deferedMenuStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    call UserMenu_Start()
+    call UserMenu_Start(s:way)
     echohl um_lyellow
     echom "Opened again the menu."
     echohl None
@@ -561,13 +560,16 @@ augroup UserMenu_InitGroup
     au BufRead * call UserMenu_InitFileType()
 augroup END
 
-inoremap <expr> <F12> UserMenu_Start()
-nnoremap <expr> <F12> UserMenu_Start()
-vnoremap <expr> <F12> UserMenu_Start()
-cnoremap <F12> <C-\>eUserMenu_Start()<CR>
-" Following doesn't work as expected…'
-onoremap <expr> <F12> UserMenu_Start()
+inoremap <expr> <F12> UserMenu_Start("i")
+nnoremap <expr> <F12> UserMenu_Start("n")
+vnoremap <expr> <F12> UserMenu_Start("v")
+cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
+" Following doesn't work as expected…
+onoremap <expr> <F12> UserMenu_Start("o")
+
+" Print command.
 command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
+
 hi def um_norm ctermfg=7
 hi def um_blue ctermfg=27
 hi def um_blue1 ctermfg=32
@@ -655,7 +657,7 @@ func! UserMenu_EscapeYForSubst(sel)
     if !empty(s:v)
         exe 'vnoremap v ' . s:v
     else
-        vunmap y
+        vunmap v
     endif
     return 's/\V'.escape(a:sel,'/').'/'
 endfunc
