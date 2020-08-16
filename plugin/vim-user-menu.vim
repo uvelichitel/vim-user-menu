@@ -111,27 +111,31 @@ func! UserMenu_Start()
             if !eval(entry[1]['show-if']) | continue | endif
         endif
 
+        let [reject,accept] = [ 0, 0 ]
         " The item shown only when the menu started in insert mode?
         if has_key(l:opts, 'only-in-insert') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^(R[cvx]=|i[cx]=)' | continue | endif
+            if s:course !~# '\v^(R[cvx]=|i[cx]=)' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in normal mode?
         if has_key(l:opts, 'only-in-normal') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | continue | endif
+            if s:course !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in visual mode?
         if has_key(l:opts, 'only-in-visual') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | continue | endif
+            if s:course !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when entering commands?
         if has_key(l:opts, 'only-in-ex') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^c[ve]=' | continue | endif
+            if s:course !~# '\v^c[ve]=' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when a job is running?
         if has_key(l:opts, 'only-in-sh') && !has_key(l:opts,'always-show')
-            if s:course !~# '\v^[\!t]$' | continue | endif
+            if s:course !~# '\v^[\!t]$' | let reject += 1 | else | let accept += 1 | endif
         endif
 
+        if reject && ! accept
+            continue
+        endif
         " Support embedding variables in the text via {var}.
         let entry[0] = UserMenu_ExpandVars(entry[0])
         call add( items, entry[0] )
@@ -586,11 +590,10 @@ hi PmenuSel ctermfg=220 ctermbg=blue
 
 let s:timers = []
 let s:default_user_menu = [
-            \ [ "° Save all & Quit",
-                       \ #{ type: 'cmds', body: ':q', smessage: "p:4:hl:2:Quitting Vim
-                           \ … {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
-                               \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ modified: {&modified}…" } ],
+            \ [ "° Open …",
+                        \ #{ type: 'cmds', body: ':Ex', opts: "",
+                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
+                            \ message: "p:2:hl:gold:Explorer started correctly."} ],
             \ [ "° Save current buffer",
                        \ #{ type: 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
                             \ smessage:'p:4:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
@@ -599,34 +602,26 @@ let s:default_user_menu = [
                                     \ saved under: " . expand("%")] | endif }
                                 \{g:_m}',
                             \ opts: "", message: "p:2:hl:2:{g:_sr}" } ],
+            \ [ "° Save all & Quit",
+                       \ #{ type: 'cmds', body: ':q', smessage: "p:4:hl:2:Quitting Vim
+                           \ … {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
+                               \ w! .unnamed.txt | endif | endif}All files saved, current file
+                               \ modified: {&modified}…" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:2:hl:lblue2:New state: {g:vichord_search_in_let}." } ],
-            \ [ "° Open [Exp,vis,msgs]…",
-                        \ #{ type: 'cmds', body: 'Ex', opts: "only-in-visual",
-                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
-                            \ message: "p:2:hl:gold:Explorer started correctly."} ],
-            \ [ "° Other… [Exp,s-msg]",
-                        \ #{ type: 'cmds', body: 'Ex', opts: "",
-                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
-                            \ message: "p:2:hl:gold:Explorer started correctly."} ],
-            \ [ "° SomeExp [exit-ex,keep]",
-                        \ #{ type: 'cmds', body: 'Ex', opts: "exit-to-norm keep-menu-open"} ],
-            \ [ "° NEW [type:norm,exit-ex]",
+            \ [ "° New buffer",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "exit-to-norm",
-                            \ message: "p:4:hl:2:New buffer created."} ],
-            \ [ "° NEW [type:keys,keep,msg]",
-                        \ #{ type: 'keys', body: "\<C-bslash>\<C-N>\<C-W>n", 
-                            \ message: "p:4:hl:2:New buffer created.", opts: "keep-menu-open"} ],
+                            \ message: "p:1:hl:2:New buffer created."} ],
             \ [ "° Use visual selection in s/…/…/ escaped…",
                         \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/')\<CR>
                             \:%s/\\V\<C-R>\"/", opts: "only-in-visual",
                             \ message:"p:3:The selection has been escaped."} ],
             \ [ "° Select text and use in s/…/…/ escaped…",
                         \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
-                            \ opts: "only-in-normal",
+                            \ opts: "only-in-normal only-in-visual",
                             \ smessage:"p:2:Select some text and YANK to get to :s/…/…"} ],
             \ [ "° Upcase Letters",
                         \ #{ type: 'norm', body: "U", opts: "only-in-visual",
