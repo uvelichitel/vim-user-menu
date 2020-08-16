@@ -21,8 +21,7 @@
 " 
 " The meaning of the dictionary keys:
 "
-" – The "type" is one of: "cmd", "expr", "norm", "keys", "n-mapping",
-" "i-mapping", "c-mapping", "other-item".
+" – The "type" is one of: "cmd", "expr", "norm", "keys", "other-item".
 "
 " – The "{command body}" is either:
 "   – A Ex command, like ":w" or "w". Type: "cmd" causes such command to be
@@ -34,11 +33,6 @@
 "     "\<C-w>n". Type: "keys".
 "   – An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
 "     Type "other-item" will cause the given other menu item to be run, only. 
-"   – An sequence of keys of a complex normal command. Type: "n-mapping" invokes
-"     the keys.
-"   – An sequence of keys of a complex insert-mode mapping. Type: "i-mapping"
-"     invokes the keys (feeds them to the editor) potentially causing various
-"     insert-mode mappings to trigger.
 "   
 " There are also some optional, advanced keys of the dictionary:
 " [ [ "…", #{ …,
@@ -88,38 +82,10 @@
 "   executing the main body ↔ the main command part.
 " 
 
-" FUNCTION: UserMenu_InitFT() {{{
-" A function that's called when a new buffor is created.
-func! UserMenu_InitBufAdd() 
-    let b:user_menu_cmode_cmd = ""
-    let s:current_menu = {}
-    let s:current_menu[bufnr()] = []
-endfunc
-" }}}
-
-" FUNCTION: UserMenu_EnsureInit() {{{
-func! UserMenu_EnsureInit()
-    if !exists("b:user_menu_cmode_cmd")
-        2UMsg No \b:var detected °° calling: °° « \UserMenu_InitBufAdd() » …
-        call UserMenu_InitBufAdd()
-        return 0
-    endif
-    return 1
-endfunc
-" }}}
-
-" FUNCTION: UserMenu_InitFileType() {{{
-" A funcion that's called when the buffer is loaded.
-func! UserMenu_InitFileType()
-    call UserMenu_InitBufAdd()
-endfunc
-" }}}
-
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start()
     let s:cmd = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
-    UMsg °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd):'')
-    echohl None
+    PRINT °°° UserMenu_Start °°° Mode: mode() ((!empty(s:cmd)) ? '←·→ Cmd: '.string(s:cmd):'')
 
     call UserMenu_EnsureInit()
 
@@ -196,10 +162,9 @@ func! UserMenu_Start()
     return !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd")) ?
 		\ 'echo "'.escape(UserMenu_BufOrSesVar("user_menu_cmode_cmd"),'"')."\"" : ""
 endfunc " }}}
-
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
-    " Carefully establish the selection.
+    " Carefully establish the selection and its data.
     let [s:it,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
         let [s:it,s:got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
@@ -207,8 +172,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Important, base debug log.
-    2UMsg °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
-    echohl None
+    2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
     " Should restore the command line?
     let had_cmd = 0
@@ -223,7 +187,7 @@ func! UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
         if a:result > len(a:result)
-            UMsg! Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
+            PRINT! Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
 
         return
@@ -242,7 +206,7 @@ func! UserMenu_MainCallback(id, result)
     elseif s:type == 'keys'
         call feedkeys(s:body,"n")
     else
-        UMsg! Unrecognized ·item· type: • s:type •
+        PRINT! Unrecognized ·item· type: • s:type •
     endif
 
     " Output message after the command?
@@ -262,6 +226,30 @@ func! UserMenu_MainCallback(id, result)
 
 endfunction
 " }}}
+" FUNCTION: UserMenu_InitFT() {{{
+" A function that's called when a new buffor is created.
+func! UserMenu_InitBufAdd() 
+    let b:user_menu_cmode_cmd = ""
+    let s:current_menu = {}
+    let s:current_menu[bufnr()] = []
+endfunc
+" }}}
+" FUNCTION: UserMenu_EnsureInit() {{{
+func! UserMenu_EnsureInit()
+    if !exists("b:user_menu_cmode_cmd")
+        2PRINT No \b:var detected °° calling: °° « \UserMenu_InitBufAdd() » …
+        call UserMenu_InitBufAdd()
+        return 0
+    endif
+    return 1
+endfunc
+" }}}
+" FUNCTION: UserMenu_InitFileType() {{{
+" A funcion that's called when the buffer is loaded.
+func! UserMenu_InitFileType()
+    call UserMenu_InitBufAdd()
+endfunc
+" }}}
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
@@ -278,7 +266,7 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
             call add(s:pauses, s:pause)
             call add(s:timers, timer_start(a:0 ? a:1 : 150, function("s:deferedUserMessage")))
         else
-            7UMsg UserMenu_ExpandVars(s:msg)
+            7PRINT UserMenu_ExpandVars(s:msg)
             redraw
             if s:pause =~ '\v^\d+$' && s:pause > 0
                 call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
@@ -287,6 +275,7 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
         endif
     endif
 endfunc
+" }}}
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
     redraw
@@ -296,27 +285,26 @@ func! UserMenu_KeyFilter(id,key)
     if s:tryb > 0
         if a:key == "\<CR>"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
-            3UMsg mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT mode() ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
         elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3UMsg mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
-            UMsg Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
+            3PRINT mode() ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
+            PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
             call feedkeys("\<CR>","n")
         else
-            3UMsg mode() ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
+            3PRINT mode() ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
         endif
         " Don't consume the key – pass it through, unless it's <Up>.
         redraw
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let s:result = popup_filter_menu(a:id, a:key)
-        3UMsg mode() ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+        3PRINT mode() ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
                     \ s:tryb °°° ret ((mode()=~#'\v^c[ve]=') ? 'forced-1' : s:result) °°°
         redraw
         return (mode() =~# '\v^c[ve]=') ? 1 : s:result
     endif
 endfunc " }}}
-
 " FUNCTION: s:msg(hl,...) {{{
 " 0 - error         LLEV=0 will show only them
 " 1 - warning       LLEV=1
@@ -380,22 +368,19 @@ func! s:msg(hl, ...)
     echohl None 
 endfunc
 " }}}
-
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
 func! s:msgcmdimpl(hl, bang, linenum, ...)
     let hl = !empty(a:bang) ? 0 : a:hl
     call s:msg(hl, extend(["[".a:linenum."]"], a:000))
 endfunc
 " }}}
-
 " FUNCTION: s:redraw(timer) {{{
 func! s:redraw(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    5UMsg △ redraw called △
+    6PRINT △ redraw called △
     redraw
 endfunc
 " }}}
-
 " FUNCTION: s:deferedMenuStart(timer) {{{
 func! s:deferedMenuStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
@@ -406,11 +391,10 @@ func! s:deferedMenuStart(timer)
     redraw
 endfunc
 " }}}
-" 
 " FUNCTION: s:deferedUserMessage(timer) {{{
 func! s:deferedUserMessage(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    7UMsg UserMenu_ExpandVars(s:msgs[s:msg_idx])
+    7PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
     redraw
@@ -420,7 +404,6 @@ func! s:deferedUserMessage(timer)
     endif
 endfunc
 " }}}
-
 " FUNCTION: UserMenu_BufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_BufOrSesVar(var_to_read,...)
@@ -430,12 +413,11 @@ func! UserMenu_BufOrSesVar(var_to_read,...)
     elseif exists("b:" . a:var_to_read)
         return get( b:, a:var_to_read, a:0 ? a:1 : '' )
     else
-        5UMsg ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
+        6PRINT ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
         return a:0 ? a:1 : ''
     endif
 endfunc
 " }}}
-
 " FUNCTION: UserMenu_CleanupSesVars() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_CleanupSesVars()
@@ -450,7 +432,6 @@ func! UserMenu_CleanupSesVars()
     endif
 endfunc
 " }}}
- 
 " FUNCTION: UserMenu_BufOrSesVarSet() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
 func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
@@ -462,7 +443,7 @@ func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
             let b:[a:var_to_set] = a:value_to_set
             return 1
         else
-            5UMsg ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
+            6PRINT ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
             let b:[a:var_to_set] = a:value_to_set
             if exists("b:" . a:var_to_set)
                 let b:[a:var_to_set] = a:value_to_set
@@ -475,25 +456,24 @@ func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
     endif
 endfunc
 " }}}
-
 " FUNCTION: UserMenu_ExpandVars {{{
 func! UserMenu_ExpandVars(text)
     return substitute(a:text, '\v\{([sgb]\:[a-zA-Z_][a-zA-Z0-9_]*)\}', '\=eval(submatch(1))', '')
 endfunc
 " }}}
-
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
 func! UserMenu_GetPrefixValue(pfx,msg)
     let mres = matchlist(a:msg,'\v^'.a:pfx.':([^:]*):(.*)$')
     return empty(mres) ? [a:msg,0] : mres[1:2]
 endfunc
 " }}}
-" FUNCTION: UserMenu_RestoreCmdLineFrom
+" FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
 func! UserMenu_RestoreCmdLineFrom(cmd)
     call feedkeys(a:cmd,"n")
 endfunc
 " }}}
-" FUNCTION: UserMenu_PauseAllTimers
+
+" FUNCTION: UserMenu_PauseAllTimers() {{{
 func! UserMenu_PauseAllTimers(pause,time)
     for t in s:timers
         call timer_pause(t,a:pause)
@@ -505,7 +485,8 @@ func! UserMenu_PauseAllTimers(pause,time)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_UnPauseAllTimers
+
+" FUNCTION: UserMenu_UnPauseAllTimersCallback() {{{
 func! UserMenu_UnPauseAllTimersCallback(timer)
     call filter( s:timers, 'v:val != a:timer' )
     for t in s:timers
@@ -568,7 +549,7 @@ vnoremap <expr> <F12> UserMenu_Start()
 cnoremap <F12> <C-\>eUserMenu_Start()<CR>
 " Following doesn't work as expected…'
 onoremap <expr> <F12> UserMenu_Start()
-command! -nargs=+ -count=4 -bang -bar UMsg call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
+command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
 hi def um_norm ctermfg=7
 hi def um_blue ctermfg=27
 hi def um_blue1 ctermfg=32
