@@ -27,6 +27,8 @@ Main features by the example of the default menu:
 
 [![asciicast](https://asciinema.org/a/354759.svg)](https://asciinema.org/a/354759)
 
+The feature — ability to edit the command line:
+
 [![asciicast](https://asciinema.org/a/354825.svg)](https://asciinema.org/a/354825)
 
 <!-- vim:set tw=80 autoindent fo+=a1n: -->
