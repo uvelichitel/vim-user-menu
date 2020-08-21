@@ -626,7 +626,7 @@ let s:default_user_menu = [
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:hl:2:New buffer created."} ],
             \ [ "° Use visual selection in s/…/…/ escaped…",
-                        \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/')\<CR>
+                        \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/\\')\<CR>
                             \:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:3:The selection has been escaped."} ],
             \ [ "° Select text and use in s/…/…/ escaped…",
@@ -638,7 +638,7 @@ let s:default_user_menu = [
                             \ opts: "in-visual",
                             \ message:"p:1:All selected front letters are now upcase."} ],
             \ [ "° Escape the command line",
-                        \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \\')\<CR>",
+                        \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \')\<CR>",
                             \ opts: ['in-ex'] } ]
             \ ]
 
@@ -665,7 +665,7 @@ func! UserMenu_EscapeYForSubst(sel)
     else
         vunmap v
     endif
-    return 's/\V'.escape(a:sel,'/').'/'
+    return '%s/\V'.escape(a:sel,"/\\").'/'
 endfunc
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
