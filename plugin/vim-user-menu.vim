@@ -571,6 +571,8 @@ onoremap <expr> <F12> UserMenu_Start("o")
 " Print command.
 command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
 
+command! Menu call UserMenu_Start("n")
+
 hi def um_norm ctermfg=7
 hi def um_blue ctermfg=27
 hi def um_blue1 ctermfg=32
