@@ -1,7 +1,8 @@
 # Vim User Menu
 
 Sometimes it doesn't fit right to add another function or command for yet
-another code snippet spotted on GitHub. Drawbacks of such approach include:
+another code snippet spotted on GitHub or a Wiki. Drawbacks of such approach
+include:
 
 1. It's easy to forget about the snippets saved in such a way.
 2. … or to forget the way that they should be used.
