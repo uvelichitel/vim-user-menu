@@ -412,7 +412,7 @@ endfunc
 " FUNCTION: s:deferedUserMessage(timer) {{{
 func! s:deferedUserMessage(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    7PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
+    10PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
     redraw
