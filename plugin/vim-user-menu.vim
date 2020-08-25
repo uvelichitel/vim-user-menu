@@ -283,7 +283,7 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
         else
             let s:msg = UserMenu_ExpandVars(s:msg)
             if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
-                7PRINT s:msg
+                10PRINT s:msg
                 redraw
                 if s:pause =~ '\v^\d+$' && s:pause > 0
                     call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
@@ -332,14 +332,14 @@ endfunc " }}}
 " 5 - debug2        …
 func! s:msg(hl, ...)
     " Log only warnings and errors by default.
-    if a:hl != 7 && a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
+    if a:hl < 7 && a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
         return
     endif
 
     " Make a copy of the input.
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
-    if a:hl == 7 | let args = args[1:] | endif
-    let hl = a:hl == 7 ? 4 : a:hl
+    if a:hl >= 7 | let args = args[1:] | endif
+    let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
     let start_idx = -1
@@ -359,7 +359,7 @@ func! s:msg(hl, ...)
     
         if start_idx == -1
             " A variable?
-            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*\s*$'
+            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=\s*$'
                 let arg = eval(arg)
             " A function call or an expression wrapped in parens?
             elseif arg =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
@@ -626,7 +626,7 @@ let s:default_user_menu = [
                             \ message: "p:2:hl:lblue2:New state: {b:apc_enable}." } ],
             \ [ "° New buffer",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
-                            \ message: "p:1:hl:2:New buffer created."} ],
+                            \ message: "p:1:New buffer created."} ],
             \ [ "° Use visual selection in s/…/…/ escaped…",
                         \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/\\')\<CR>
                             \:%s/\\V\<C-R>\"/", opts: "in-visual",
