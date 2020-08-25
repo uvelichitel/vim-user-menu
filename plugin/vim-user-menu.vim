@@ -90,6 +90,13 @@ func! UserMenu_Start(way)
 
     call UserMenu_EnsureInit()
 
+    let s:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
+    if s:way != 'c'
+        PRINT 9 User Menu started in s:state_to_desc[s:way] mode.
+    elseif s:way == 'c'
+        call UserMenu_DeployUserMessage(#{ message:'p:1:hl:gold:User Menu started in Command-Line mode. The current-command line is:'}, 'message', 1.7)
+    endif
+
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
 
     " The source of the menu…
@@ -150,7 +157,6 @@ func! UserMenu_Start(way)
         call feedkeys("\<Up>","n")
     endif
 
-    let state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
@@ -160,7 +166,7 @@ func! UserMenu_Start(way)
                 \ border: [ ],
                 \ fixed: 0,
                 \ flip: 1,
-                \ title: ' VIM User Menu ≈ ' . state_to_desc[s:way] . ' ≈ ',
+                \ title: ' VIM User Menu ≈ ' . s:state_to_desc[s:way] . ' ≈ ',
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
@@ -271,8 +277,8 @@ endfunc
 " FUNCTION: UserMenu_DeployUserMessage() {{{
 func! UserMenu_DeployUserMessage(dict,key,init,...)
     if a:init > 0
-        let [s:msgs, s:msg_idx] = [ [], 0 ]
-        let [s:pauses, s:pause_idx] = [ [], 0 ]
+        let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
+        let [s:pauses, s:pause_idx] = [ exists("s:pauses") ? s:pauses : [], exists("s:pause_idx") ? s:pause_idx : 0 ]
     endif
     if has_key(a:dict,a:key) 
         let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]',a:dict[a:key])
