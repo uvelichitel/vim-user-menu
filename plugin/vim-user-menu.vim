@@ -366,7 +366,7 @@ func! s:msg(hl, ...)
         if start_idx == -1
             " A variable?
             if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=\s*$'
-                let arg = eval(arg)
+                let arg = UserMenu_ExpandVars("{".arg."}")
             " A function call or an expression wrapped in parens?
             elseif arg =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
                 let arg = eval(arg)
@@ -481,8 +481,9 @@ func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
 endfunc
 " }}}
 " FUNCTION: UserMenu_ExpandVars {{{
+" It expands all {:command …'s} and {[sgb]:user_variable's}.
 func! UserMenu_ExpandVars(text)
-    return substitute(a:text, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+    return substitute(a:text, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
 endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
