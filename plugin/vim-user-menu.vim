@@ -592,15 +592,22 @@ hi def um_lyellow ctermfg=yellow cterm=bold
 hi def um_lyellow2 ctermfg=221
 hi def um_lyellow3 ctermfg=226
 hi def um_green ctermfg=green
-hi def um_lgreen ctermfg=lightgreen
-hi def um_lgreen2 ctermfg=118
-hi def um_lgreen3 ctermfg=154
 hi def um_green2 ctermfg=35
 hi def um_green3 ctermfg=40
 hi def um_green4 ctermfg=82
+hi def um_bgreen ctermfg=green cterm=bold
+hi def um_bgreen2 ctermfg=35 cterm=bold
+hi def um_bgreen3 ctermfg=40 cterm=bold
+hi def um_bgreen4 ctermfg=82 cterm=bold
+hi def um_lgreen ctermfg=lightgreen
+hi def um_lgreen2 ctermfg=118
+hi def um_lgreen3 ctermfg=154
+hi def um_lbgreen ctermfg=lightgreen cterm=bold
+hi def um_lbgreen2 ctermfg=118 cterm=bold
+hi def um_lbgreen3 ctermfg=154 cterm=bold
 hi def UMPmenu ctermfg=220 ctermbg=darkblue
-hi PopupSelected ctermfg=220 ctermbg=blue
-hi PmenuSel ctermfg=220 ctermbg=blue
+hi PopupSelected ctermfg=17 ctermbg=lightblue
+hi PmenuSel ctermfg=17 ctermbg=lightblue
 
 let s:timers = []
 let s:default_user_menu = [
@@ -684,6 +691,8 @@ func! UserMenu_EscapeYForSubst(sel,inactive)
     endif
     if a:inactive
         5PRINT The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
+        call UserMenu_DeployUserMessage(#{m:"p:0.5:hl:lbgreen2:The operation has been correctly canceled."},
+                    \ 'm', 1)
         return "\<ESC>"
     else
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
