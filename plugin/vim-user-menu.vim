@@ -106,11 +106,13 @@ func! UserMenu_Start(way)
 
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
-            7PRINT! p:1.5:hl:gold:User Menu started in Command-Line mode. The current-command line is:
-            let s:cmdline_like_msg = "hl:None::" . s:cmdline_like_msg
+	    if !s:state_restarting
+		7PRINT! p:1.5:hl:gold:User Menu started in Command-Line mode. The current-command line is:
+	    endif
             7PRINT! s:cmdline_like_msg
         endif
     endif
+    let s:state_restarting = 0
 
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
 
@@ -215,7 +217,6 @@ func! UserMenu_MainCallback(id, result)
 	let had_cmd = 1
         call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
     endif
-    let s:state_restarting = 0
     call UserMenu_CleanupSesVars(s:way !~ '\v^c.*' ? 1 : 0)
 
     " The menu has been canceled? (ESC, ^C, cursor move)
