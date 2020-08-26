@@ -167,6 +167,12 @@ func! UserMenu_Start(way)
         call add( s:current_menu[bufnr()], entry )
     endfor
 
+    hi def UMPmenu ctermfg=220 ctermbg=darkblue
+    hi def UMPmenuSB ctermfg=220 ctermbg=darkblue
+    hi def UMPmenuTH ctermfg=220 ctermbg=darkblue
+    hi PopupSelected ctermfg=17 ctermbg=lightblue
+    hi PmenuSel ctermfg=17 ctermbg=lightblue
+
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
@@ -181,6 +187,8 @@ func! UserMenu_Start(way)
                 \ resize: 1,
                 \ close: 'button',
                 \ highlight: 'UMPmenu',
+                \ scrollbarhighlight: 'UMPmenuSB',
+                \ thumbhighlight: 'UMPmenuTH',
                 \ cursorline: 1,
                 \ borderhighlight: [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
                 \ padding: [ 1, 1, 1, 1 ] } )
@@ -190,6 +198,8 @@ func! UserMenu_Start(way)
 endfunc " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
+    " Clear the message window.
+    echom ""
     " Carefully establish the selection and its data.
     let [s:it,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
@@ -655,9 +665,6 @@ hi def um_lgreen3 ctermfg=154
 hi def um_lbgreen ctermfg=lightgreen cterm=bold
 hi def um_lbgreen2 ctermfg=118 cterm=bold
 hi def um_lbgreen3 ctermfg=154 cterm=bold
-hi def UMPmenu ctermfg=220 ctermbg=darkblue
-hi PopupSelected ctermfg=17 ctermbg=lightblue
-hi PmenuSel ctermfg=17 ctermbg=lightblue
 
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
