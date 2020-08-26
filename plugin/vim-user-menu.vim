@@ -356,7 +356,7 @@ func! s:msg(hl, ...)
     for idx in range(len(args))
         let arg = args[idx]
         " Unclosed paren?
-        " Discriminate two special cases: (mode() and (mode(sub())
+        " Discriminate two special cases: (func() and (func(sub_func())
         if start_idx == -1 && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
             let start_idx = idx
         " A free, closing paren?
