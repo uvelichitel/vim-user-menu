@@ -152,7 +152,7 @@ func! UserMenu_Start(way)
         endif
         " The item shown only when the menu started when a job is running?
         if has_key(l:opts, 'in-sh') && !has_key(l:opts,'always-show')
-            if s:way !~# '\v^[\!t]$' | let reject += 1 | else | let accept += 1 | endif
+            if s:way !~# '\v^[!t]$' | let reject += 1 | else | let accept += 1 | endif
         endif
 
         if reject && ! accept
@@ -675,12 +675,12 @@ let s:default_user_menu = [
                            \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
                                \ modified: {&modified}.", opts: "in-normal" } ],
-            \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
+            \ [ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:1:hl:lblue2:The new state: {g:vichord_search_in_let}." } ],
-            \ [ "° Toggle Auto Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
+            \ [ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
                         \ #{ show-if: "exists('g:apc_loaded')",
                             \ type: 'cmds', body: 'if get(b:,"apc_enable",0) | ApcDisable |
                                 \ else | ApcEnable | endif', opts: "keep-menu-open",
@@ -688,19 +688,19 @@ let s:default_user_menu = [
             \ [ "° New buffer",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:New buffer created."} ],
-            \ [ "° Use visual selection in s/…/…/ escaped…",
+            \ [ "° The «visual-selection» in s/…/…/g escaped",
                         \ #{ type: 'keys', body: "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
-            \ [ "° Select text and use in s/…/…/ escaped…",
+            \ [ "° «Visual» yank in s/…/…/g escaped…",
                         \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
-                            \ opts: "in-normal in-visual",
-                            \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…"} ],
-            \ [ "° Upcase _front_ letters in words",
+                            \ opts: "in-normal",
+                            \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
+            \ [ "° Upcase _front_ letters in «selected» words",
                         \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ opts: "in-visual",
                             \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
-            \ [ "° Escape the command line",
+            \ [ "° Escape the «command-line»",
                         \ #{ type: 'keys', body: "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
                                 \'\\n','\\\\n','g')\<CR>",
                             \ opts: ['in-ex'] } ]
