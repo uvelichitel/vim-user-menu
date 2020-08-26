@@ -647,7 +647,8 @@ let s:default_user_menu = [
                             \ opts: "in-visual",
                             \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
             \ [ "° Escape the command line",
-                        \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \')\<CR>",
+                        \ #{ type: 'keys', body: "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
+                                \'\\n','\\\\n','g')\<CR>",
                             \ opts: ['in-ex'] } ]
             \ ]
 
@@ -674,7 +675,7 @@ func! UserMenu_EscapeYForSubst(sel)
     else
         vunmap v
     endif
-    return '%s/\V'.escape(a:sel,"/\\").'/'
+    return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
 endfunc
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
