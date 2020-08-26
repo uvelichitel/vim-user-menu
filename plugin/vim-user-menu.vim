@@ -635,9 +635,9 @@ let s:default_user_menu = [
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:New buffer created."} ],
             \ [ "° Use visual selection in s/…/…/ escaped…",
-                        \ #{ type: 'keys', body: "y:let @@ = escape(@@,'/\\')\<CR>
-                            \:%s/\\V\<C-R>\"/", opts: "in-visual",
-                            \ message:"p:3:The selection has been escaped."} ],
+                        \ #{ type: 'keys', body: "y:let @@ = substitute(escape(@@,'/\\'),
+                            \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
+                            \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
             \ [ "° Select text and use in s/…/…/ escaped…",
                         \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
                             \ opts: "in-normal in-visual",
