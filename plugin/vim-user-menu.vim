@@ -291,7 +291,8 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
             if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
                 10PRINT s:msg
                 redraw
-                if s:pause =~ '\v^\d+$' && s:pause > 0
+                if s:pause =~ '\v^\d+\.\d+$' | let s:pause = float2nr(round(str2float(s:pause) * 1000.0)) . "m" | endif
+                if s:pause =~ '\v^-=\d+m=$' && (s:pause =~ "*m$" ? s:pause[0:-2] : s:pause) > 0
                     call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
                     exe "sleep" s:pause
                 endif
@@ -420,7 +421,8 @@ func! s:deferredUserMessage(timer)
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
     redraw
-    if pause =~ '\v^\d+$' && pause > 0
+    if pause =~ '\v^\d+\.\d+$' | let pause = float2nr(round(str2float(pause) * 1000.0)) . "m" | endif
+    if pause =~ '\v^-=\d+m=$' && (pause =~ "*m$" ? pause[0:-2] : pause) > 0
         call UserMenu_PauseAllTimers(1, pause * 1000 + 10)
         exe "sleep" pause
     endif
@@ -499,12 +501,12 @@ endfunc
 " FUNCTION: UserMenu_PauseAllTimers() {{{
 func! UserMenu_PauseAllTimers(pause,time)
     for t in s:timers
-        call timer_pause(t,a:pause)
+        call timer_pause(t,float2nr(round(a:pause)))
     endfor
 
     if a:pause && a:time > 0
         " Limit the amount of time of the pause.
-        call add(s:timers, timer_start(a:time, function("UserMenu_UnPauseAllTimersCallback")))
+        call add(s:timers, timer_start(float2nr(round(a:time)), function("UserMenu_UnPauseAllTimersCallback")))
     endif
 endfunc
 " }}}
