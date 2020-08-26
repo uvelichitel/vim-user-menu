@@ -698,10 +698,10 @@ let s:default_user_menu = [
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
             \ [ "° «Visual» yank in s/…/…/g escaped…",
-                        \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
+                        \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
                             \ opts: "in-normal",
                             \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
-            \ [ "° Upcase _front_ letters in «selected» words",
+            \ [ "° Upcase _front_ letters in the «selected» words",
                         \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ opts: "in-visual",
                             \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
@@ -715,17 +715,17 @@ let s:default_user_menu = [
 
 """""""""""""""""" IN-MENU USE FUNCTIONS {{{
 
-func! UserMenu_StartSelectEscape()
+func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     let s:y = maparg("y", "v")
     let s:v = maparg("v", "v")
     let s:esc = maparg("\<ESC>", "v")
-    vnoremap y y:<C-R>=UserMenu_EscapeYForSubst(@@,0)<CR>
     vnoremap v <ESC>gv
-    vnoremap <expr> <ESC> UserMenu_EscapeYForSubst(@@,1)
+    vnoremap y y:<C-R>=UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,0)<CR>
+    vnoremap <expr> <ESC> UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,1)
     call feedkeys("v")
 endfunc
 
-func! UserMenu_EscapeYForSubst(sel,inactive)
+func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
     if !empty(s:y)
         exe 'vnoremap y ' . s:y
     else
