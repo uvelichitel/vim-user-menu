@@ -94,7 +94,7 @@ func! UserMenu_Start(way)
     if s:way != 'c'
         PRINT 9 User Menu started in s:state_to_desc[s:way] mode.
     elseif s:way == 'c'
-        call UserMenu_DeployUserMessage(#{ message:'p:1:hl:gold:User Menu started in Command-Line mode. The current-command line is:'}, 'message', 1.7)
+        call UserMenu_DeployUserMessage(#{ message:'p:1.7:hl:gold:User Menu started in Command-Line mode. The current-command line is:'}, 'message', 1)
     endif
 
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
@@ -355,7 +355,7 @@ func! s:msg(hl, ...)
         let arg = args[idx]
         " Unclosed paren?
         " Discriminate two special cases: (mode() and (mode(sub())
-        if arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
+        if start_idx == -1 && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
             let start_idx = idx
         " A free, closing paren?
         elseif start_idx >= 0 && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
