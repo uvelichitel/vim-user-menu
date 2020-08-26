@@ -643,7 +643,7 @@ let s:default_user_menu = [
                             \ opts: "in-normal in-visual",
                             \ smessage:"p:1.7:Select some text and YANK to get it to :s/…/…"} ],
             \ [ "° Upcase _front_ letters in words",
-                        \ #{ type: 'norm', body: ":s/\\%V\\<[a-z]/\\=toupper(submatch(0))/g\<CR>",
+                        \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ opts: "in-visual",
                             \ message:"p:1:All selected FRONT letters are now upcase."} ],
             \ [ "° Escape the command line",
