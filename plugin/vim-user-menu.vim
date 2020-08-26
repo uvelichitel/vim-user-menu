@@ -610,17 +610,17 @@ let s:default_user_menu = [
                             \ message: "p:1:hl:gold:Explorer started correctly."} ],
             \ [ "° Save current buffer",
                        \ #{ type: 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
-                            \ smessage:'p:3:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
+                            \ smessage:'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
                                 \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
                                     \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
                                     \ saved under: " . expand("%")] | endif }
                                 \{g:_m}',
                             \ opts: "in-normal", message: "p:1:hl:2:{g:_sr}" } ],
             \ [ "° Save all & Quit",
-                       \ #{ type: 'cmds', body: ':q', smessage: "p:3:hl:2:Quitting Vim
+                       \ #{ type: 'cmds', body: ':q', smessage: "p:2:hl:2:Quitting Vim
                            \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ modified: {&modified}…", opts: "in-normal" } ],
+                               \ modified: {&modified}.", opts: "in-normal" } ],
             \ [ "° Toggle completion mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
@@ -641,11 +641,11 @@ let s:default_user_menu = [
             \ [ "° Select text and use in s/…/…/ escaped…",
                         \ #{ type: 'expr', body: "UserMenu_StartSelectEscape()",
                             \ opts: "in-normal in-visual",
-                            \ smessage:"p:1.7:Select some text and YANK to get it to :s/…/…"} ],
+                            \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…"} ],
             \ [ "° Upcase _front_ letters in words",
                         \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ opts: "in-visual",
-                            \ message:"p:1:All selected FRONT letters are now upcase."} ],
+                            \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
             \ [ "° Escape the command line",
                         \ #{ type: 'keys', body: "\<C-bslash>eescape(getcmdline(), ' \')\<CR>",
                             \ opts: ['in-ex'] } ]
