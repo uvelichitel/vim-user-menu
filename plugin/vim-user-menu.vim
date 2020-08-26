@@ -84,17 +84,32 @@
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start(way)
-    let s:cmds = UserMenu_BufOrSesVar("user_menu_cmode_cmd", getcmdline())
     let s:way = a:way
+    let s:cmds = ((s:way == "c2") ? (empty(getcmdline()) ? s:cmds : getcmdline()) : getcmdline())
     PRINT °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call UserMenu_EnsureInit()
 
     let s:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
-    if s:way != 'c'
+    let s:state_to_desc['c2'] = s:state_to_desc['c']
+    if s:way !~ '\v^c2=$'
         PRINT 9 User Menu started in s:state_to_desc[s:way] mode.
-    elseif s:way == 'c'
-        call UserMenu_DeployUserMessage(#{ message:'p:1.7:hl:gold:User Menu started in Command-Line mode. The current-command line is:'}, 'message', 1)
+    elseif s:way =~ '\v^c2=$'
+        7PRINT! p:1.7:hl:gold:User Menu started in Command-Line mode. The current-command line is:
+        " Special actions needed for command-line state. 
+        if s:way == 'c'
+            call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
+            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
+            call feedkeys("\<ESC>","n")
+            call add(s:timers, timer_start(100, function("s:deferredMenuReStart")))
+            return ""
+        endif
+
+        let s:cmdline_like_msg = s:cmds
+        if s:way == 'c2'
+            let s:cmdline_like_msg = "hl:None::" . s:cmdline_like_msg
+            7PRINT! s:cmdline_like_msg
+        endif
     endif
 
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
@@ -149,14 +164,6 @@ func! UserMenu_Start(way)
         call add( s:current_menu[bufnr()], entry )
     endfor
 
-    " Special actions needed for command mode.
-    if s:way == 'c'
-        call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.getcmdline())
-        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 1)
-        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "once")
-        call feedkeys("\<Up>","n")
-    endif
-
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
                 \ filter: 'UserMenu_KeyFilter',
@@ -176,11 +183,6 @@ func! UserMenu_Start(way)
                 \ padding: [ 1, 1, 1, 1 ] } )
     redraw
 
-    let s:msg = UserMenu_BufOrSesVar("user_menu_cmode_cmd")
-    if !empty(s:msg)
-        let s:msg = "hl:None:" . s:msg
-        call UserMenu_DeployUserMessage(s:, 'msg', 1)
-    endif
     return ""
 endfunc " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
