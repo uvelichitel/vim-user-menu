@@ -237,7 +237,7 @@ func! UserMenu_MainCallback(id, result)
 
     " Reopen the menu?
     if has_key(l:opts, 'keep-menu-open')
-        call add(s:timers, timer_start(500, function("s:deferedMenuStart")))
+        call add(s:timers, timer_start(500, function("s:deferredMenuStart")))
     endif
 
     " Cancel ex command?
@@ -285,7 +285,7 @@ func! UserMenu_DeployUserMessage(dict,key,init,...)
         if a:init >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
-            call add(s:timers, timer_start(a:0 ? a:1 : 110, function("s:deferedUserMessage")))
+            call add(s:timers, timer_start(a:0 ? a:1 : 30, function("s:deferredUserMessage")))
         else
             let s:msg = UserMenu_ExpandVars(s:msg)
             if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
@@ -405,8 +405,8 @@ func! s:redraw(timer)
     redraw
 endfunc
 " }}}
-" FUNCTION: s:deferedMenuStart(timer) {{{
-func! s:deferedMenuStart(timer)
+" FUNCTION: s:deferredMenuStart(timer) {{{
+func! s:deferredMenuStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
     call UserMenu_Start(s:way)
     echohl um_lyellow
@@ -415,8 +415,8 @@ func! s:deferedMenuStart(timer)
     redraw
 endfunc
 " }}}
-" FUNCTION: s:deferedUserMessage(timer) {{{
-func! s:deferedUserMessage(timer)
+" FUNCTION: s:deferredUserMessage(timer) {{{
+func! s:deferredUserMessage(timer)
     call filter( s:timers, 'v:val != a:timer' )
     10PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
     let pause = s:pauses[s:pause_idx]
