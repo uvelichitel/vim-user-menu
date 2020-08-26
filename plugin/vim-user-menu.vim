@@ -100,7 +100,7 @@ func! UserMenu_Start(way)
             call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
             call feedkeys("\<ESC>","n")
-            call add(s:timers, timer_start(20, function("s:deferredMenuReStart")))
+            call add(s:timers, timer_start(10, function("s:deferredMenuReStart")))
             return ""
         endif
 
@@ -293,7 +293,7 @@ func! UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
         if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
-            call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 30, function("s:deferredMessageShow")))
+            call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 20, function("s:deferredMessageShow")))
             let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
             let s:msg = UserMenu_ExpandVars(s:msg)
