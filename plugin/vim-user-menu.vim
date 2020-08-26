@@ -197,15 +197,26 @@ func! UserMenu_MainCallback(id, result)
     " Important, base debug log.
     2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
+    if s:got_it
+        let l:opts = s:it[2]
+
+        " Reopen the menu?
+        if has_key(l:opts, 'keep-menu-open')
+            call add(s:timers, timer_start(170, function("s:deferredMenuReStart")))
+            let s:state_restarting = 1
+        endif
+    endif
+
     " Should restore the command line?
     let had_cmd = 0
-    if !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
+    if !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd")) && !s:state_restarting
 	" TODO2: timer, aby przetworzyć te klawisze przed wywołaniem komendy
         call UserMenu_RestoreCmdLineFrom(UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
 	let had_cmd = 1
+        call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
     endif
-    call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
-    call UserMenu_CleanupSesVars()
+    let s:state_restarting = 0
+    call UserMenu_CleanupSesVars(s:way !~ '\v^c.*' ? 1 : 0)
 
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
@@ -234,13 +245,6 @@ func! UserMenu_MainCallback(id, result)
 
     " Output message after the command?
     call UserMenu_DeployUserMessage(s:it[1], 'message', 1)
-
-    let l:opts = s:it[2]
-
-    " Reopen the menu?
-    if has_key(l:opts, 'keep-menu-open')
-        call add(s:timers, timer_start(500, function("s:deferredMenuStart")))
-    endif
 
     " Cancel ex command?
     if has_key(l:opts, 'exit-to-norm') && had_cmd
