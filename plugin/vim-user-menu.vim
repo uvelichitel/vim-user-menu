@@ -302,11 +302,7 @@ func! UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
                     10PRINT s:msg
                 endif
                 redraw
-                if s:pause =~ '\v^-=\d+(\.\d+)=$' | let s:pause = float2nr(round(str2float(s:pause) * 1000.0)) | endif
-                if s:pause =~ '\v^-=\d+$' && s:pause > 0
-                    call UserMenu_PauseAllTimers(1, s:pause + 10)
-                    exe "sleep" s:pause."m"
-                endif
+                call s:UserMenu_DoPause(s:pause)
             endif
         endif
     endif
@@ -446,10 +442,17 @@ func! s:deferredMessageShow(timer)
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
     redraw
-    if pause =~ '\v^-=\d+(\.\d+)=$' | let pause = float2nr(round(str2float(pause) * 1000.0)) | endif
-    if pause =~ '\v^-=\d+$' && pause > 0
-        call UserMenu_PauseAllTimers(1, pause + 10)
-        exe "sleep" pause."m"
+    call s:UserMenu_DoPause(pause)
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_DoPause(pause_value) {{{
+func! s:UserMenu_DoPause(pause_value)
+    if a:pause_value =~ '\v^-=\d+(\.\d+)=$'
+        let s:pause_value = float2nr(round(str2float(a:pause_value) * 1000.0))
+    endif
+    if s:pause_value =~ '\v^-=\d+$' && s:pause_value > 0
+        call UserMenu_PauseAllTimers(1, s:pause_value + 10)
+        exe "sleep" s:pause_value."m"
     endif
 endfunc
 " }}}
