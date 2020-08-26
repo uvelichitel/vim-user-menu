@@ -221,14 +221,14 @@ func! UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
         if a:result > len(a:result)
-            PRINT! Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
+            0PRINT Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
 
         return
     endif
 
     " Output message before the command?
-    call UserMenu_DeployUserMessage(s:it[1], 'smessage', -1)
+    call UserMenu_DeployDeferred_TimerTriggered_Message(s:it[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
     if s:type == 'cmds'
@@ -240,11 +240,11 @@ func! UserMenu_MainCallback(id, result)
     elseif s:type == 'keys'
         call feedkeys(s:body,"n")
     else
-        PRINT! Unrecognized ·item· type: • s:type •
+        0PRINT Unrecognized ·item· type: • s:type •
     endif
 
     " Output message after the command?
-    call UserMenu_DeployUserMessage(s:it[1], 'message', 1)
+    call UserMenu_DeployDeferred_TimerTriggered_Message(s:it[1], 'message', 1)
 
     " Cancel ex command?
     if has_key(l:opts, 'exit-to-norm') && had_cmd
@@ -280,27 +280,32 @@ endfunc
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
-" FUNCTION: UserMenu_DeployUserMessage() {{{
-func! UserMenu_DeployUserMessage(dict,key,...)
+" FUNCTION: UserMenu_DeployDeferred_TimerTriggered_Message() {{{
+func! UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
         let [s:pauses, s:pause_idx] = [ exists("s:pauses") ? s:pauses : [], exists("s:pause_idx") ? s:pause_idx : 0 ]
     endif
     if has_key(a:dict,a:key) 
-        let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]',a:dict[a:key])
+        let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]', a:dict[a:key])
         if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
-            call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 30, function("s:deferredUserMessage")))
+            call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 30, function("s:deferredMessageShow")))
+            let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
             let s:msg = UserMenu_ExpandVars(s:msg)
-            if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
-                10PRINT s:msg
+            if type(s:msg) == 3 || !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
+                if type(s:msg) == 3
+                    call s:msg(10, s:msg)
+                else
+                    10PRINT s:msg
+                endif
                 redraw
-                if s:pause =~ '\v^\d+\.\d+$' | let s:pause = float2nr(round(str2float(s:pause) * 1000.0)) . "m" | endif
-                if s:pause =~ '\v^-=\d+m=$' && (s:pause =~ "*m$" ? s:pause[0:-2] : s:pause) > 0
-                    call UserMenu_PauseAllTimers(1, s:pause * 1000 + 40)
-                    exe "sleep" s:pause
+                if s:pause =~ '\v^-=\d+(\.\d+)=$' | let s:pause = float2nr(round(str2float(s:pause) * 1000.0)) | endif
+                if s:pause =~ '\v^-=\d+$' && s:pause > 0
+                    call UserMenu_PauseAllTimers(1, s:pause + 10)
+                    exe "sleep" s:pause."m"
                 endif
             endif
         endif
@@ -351,7 +356,7 @@ func! s:msg(hl, ...)
 
     " Make a copy of the input.
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
-    if a:hl >= 7 | let args = args[1:] | endif
+    if a:hl >= 7 && args[0] =~ '\v^\[\d+\]$' | let args = args[1:] | endif
     let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
@@ -390,19 +395,30 @@ func! s:msg(hl, ...)
 
     " Finally: detect any hl:…: prefix, select the color, output the message.
     let c = ["Error", "WarningMsg", "um_gold", "um_green4", "um_blue", "None"]
-    let mres = matchlist(args[0],'\v^hl:([^:]+):(.*)$')
-    let [hl,a1] = !empty(mres) ? [ (mres[1] =~# '^\d\+$' ? c[mres[1]] : mres[1]), mres[2] ]
-                \ : [ c[hl], args[0] ]
-    let hl = (hl !~# '\v^(\d+|um_[a-z0-9]+|WarningMsg|Error)$') ? 'um_'.hl : hl
+    " Separate-out the possible hl:…: infix – try in/from the first 3 arguments.
+    let [val,new_arg] = UserMenu_GetPrefixValue("hl", join(args[0:2]))
+    let args[0:min([len(args)-1,2])] = extend([new_arg],repeat([''], min([len(args),3]) - 1))
+    let args = filter(args, "v:val != ''")
+    let hl = !empty(val) ? (val =~# '^\d\+$' ? c[val] : val) : c[hl]
+    let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
     exe 'echohl ' . hl
-    echom join( Flatten( ( len(args) > 1 ) ? [a1,args[1:]] : [a1]) )
+    redraw
+    echom join( args )
     echohl None 
 endfunc
 " }}}
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
 func! s:msgcmdimpl(hl, bang, linenum, ...)
-    let hl = !empty(a:bang) ? 0 : a:hl
-    call s:msg(hl, extend(["[".a:linenum."]"], a:000))
+    if(!empty(a:bang))
+        call UserMenu_DeployDeferred_TimerTriggered_Message(
+                    \ #{ m: (a:hl < 7 ? extend(["[".a:linenum."]"], a:000) : a:000) }, 'm', 1)
+    else
+        if type(a:000[0][1]) == 1 && a:000[0][1] =~ '\v^\[\d+\]$'
+            call s:msg(a:hl, a:000)
+        else
+            call s:msg(a:hl, extend(["[".a:linenum."]"], a:000))
+        endif
+    endif
 endfunc
 " }}}
 " FUNCTION: s:redraw(timer) {{{
@@ -412,25 +428,35 @@ func! s:redraw(timer)
     redraw
 endfunc
 " }}}
-" FUNCTION: s:deferredMenuStart(timer) {{{
-func! s:deferredMenuStart(timer)
+" FUNCTION: s:deferredMenuReStart(timer) {{{
+func! s:deferredMenuReStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    call UserMenu_Start(s:way)
-    7PRINT hl:lyellow:Opened again the menu.
+    if s:way =~ '^c.*'
+        call feedkeys("\<Up>","n")
+    endif
+    call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
+    if s:way !~ '\v^c.*'
+        let s:state_to_desc = #{ n:'Normal', i:'Insert', v:'Visual', o:'o' }
+        7PRINT hl:lyellow3:Opened again the menu in s:state_to_desc[s:way] mode.
+    endif
     redraw
 endfunc
 " }}}
-" FUNCTION: s:deferredUserMessage(timer) {{{
-func! s:deferredUserMessage(timer)
+" FUNCTION: s:deferredMessageShow(timer) {{{
+func! s:deferredMessageShow(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    10PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
+    if type(s:msgs[s:msg_idx]) == 3
+        call s:msg(10,UserMenu_ExpandVars(s:msgs[s:msg_idx]))
+    else
+        10PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
+    endif
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
     redraw
-    if pause =~ '\v^\d+\.\d+$' | let pause = float2nr(round(str2float(pause) * 1000.0)) . "m" | endif
-    if pause =~ '\v^-=\d+m=$' && (pause =~ "*m$" ? pause[0:-2] : pause) > 0
-        call UserMenu_PauseAllTimers(1, pause * 1000 + 10)
-        exe "sleep" pause
+    if pause =~ '\v^-=\d+(\.\d+)=$' | let pause = float2nr(round(str2float(pause) * 1000.0)) | endif
+    if pause =~ '\v^-=\d+$' && pause > 0
+        call UserMenu_PauseAllTimers(1, pause + 10)
+        exe "sleep" pause."m"
     endif
 endfunc
 " }}}
@@ -450,15 +476,14 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_CleanupSesVars() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_CleanupSesVars()
+func! UserMenu_CleanupSesVars(...)
     if has_key(s:,'user_menu_init_cmd_mode')
         call remove(s:,'user_menu_init_cmd_mode')
     endif
-    if has_key(s:,'user_menu_init_cmd_mode_once')
-        call remove(s:,'user_menu_init_cmd_mode_once')
-    endif
-    if has_key(s:,'user_menu_cmode_cmd')
-        call remove(s:,'user_menu_cmode_cmd')
+    if a:0 && a:1
+        if has_key(s:,'user_menu_cmode_cmd')
+            call remove(s:,'user_menu_cmode_cmd')
+        endif
     endif
 endfunc
 " }}}
@@ -488,21 +513,33 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_ExpandVars {{{
 " It expands all {:command …'s} and {[sgb]:user_variable's}.
-func! UserMenu_ExpandVars(text)
-    return substitute(a:text, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+func! UserMenu_ExpandVars(text_or_texts)
+    if type(a:text_or_texts) == 3
+        " List input.
+        let texts=deepcopy(a:text_or_texts)
+        let idx = 0
+        for t in texts
+            let texts[idx] = substitute(t, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+            let idx += 1
+        endfor
+        return texts
+    else
+        " String input.
+        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+    endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
-func! UserMenu_GetPrefixValue(pfx,msg)
-    let mres = matchlist( (type(a:msg) == 3 ? a:msg[2] : a:msg),'\v^(.*'.a:pfx.'.*)@<!'.a:pfx.':([^:]*):(.*)$' )
-    echom a:msg[2] "←·→" mres
-    " Special case: a:msg is a List:
+" FUNCTION: UserMenu_GetPrefixValue(pfx, msg) {{{
+func! UserMenu_GetPrefixValue(pfx, msg)
+    let mres = matchlist( (type(a:msg) == 3 ? (len(a:msg) > 1 ? a:msg[1] : a:msg[0]) : a:msg),'\v^(.{-})'.a:pfx.':([^:]*):(.*)$' )
+    " Special case → a:msg is a List:
     if type(a:msg) == 3 && !empty(mres)
         let cpy = deepcopy(a:msg)
         " Update the message with the content without the prefix-value:
-        let cpy[2] = mres[1].mres[3]
+        let cpy[1] = mres[1].mres[3]
         return [mres[2],cpy]
     else
+        " Regular case → a:msg is a String or no match
         return empty(mres) ? [0,a:msg] : [ mres[2], mres[1].mres[3] ]
     endif
 endfunc
@@ -516,12 +553,12 @@ endfunc
 " FUNCTION: UserMenu_PauseAllTimers() {{{
 func! UserMenu_PauseAllTimers(pause,time)
     for t in s:timers
-        call timer_pause(t,float2nr(round(a:pause)))
+        call timer_pause(t,a:pause)
     endfor
 
     if a:pause && a:time > 0
         " Limit the amount of time of the pause.
-        call add(s:timers, timer_start(float2nr(round(a:time)), function("UserMenu_UnPauseAllTimersCallback")))
+        call add(s:timers, timer_start(a:time, function("UserMenu_UnPauseAllTimersCallback")))
     endif
 endfunc
 " }}}
@@ -624,6 +661,8 @@ hi def UMPmenu ctermfg=220 ctermbg=darkblue
 hi PopupSelected ctermfg=17 ctermbg=lightblue
 hi PmenuSel ctermfg=17 ctermbg=lightblue
 
+let [ s:msgs, s:msg_idx ] = [ [], -1 ]
+let s:state_restarting = 0
 let s:timers = []
 let s:default_user_menu = [
             \ [ "° Open …",
@@ -706,8 +745,7 @@ func! UserMenu_EscapeYForSubst(sel,inactive)
     endif
     if a:inactive
         5PRINT The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
-        call UserMenu_DeployUserMessage(#{m:"p:0.5:hl:lbgreen2:The operation has been correctly canceled."},
-                    \ 'm', 1)
+        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
         return "\<ESC>"
     else
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
