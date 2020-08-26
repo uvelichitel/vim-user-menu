@@ -318,20 +318,13 @@ func! UserMenu_KeyFilter(id,key)
     let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
     if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
-    if s:tryb > 0
-        if a:key == "\<CR>"
-            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 0)
-            3PRINT s:way ←←← <CR> →→→ end-passthrough ··· user_menu_init_cmd_mode s:tryb ···
-        elseif UserMenu_BufOrSesVar("user_menu_init_cmd_mode_once") == "once"
-            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode_once", "already-ran")
-            3PRINT s:way ←←← s:key →→→ echo/fake-cmd-line ··· user_menu_init_cmd_mode s:tryb ···
-            PRINT Setting command line to •→ appear ←• as: UserMenu_BufOrSesVar('user_menu_cmode_cmd')
-            call feedkeys("\<CR>","n")
-        else
-            3PRINT s:way ←←← s:key →→→ passthrough…… ··· user_menu_init_cmd_mode s:tryb ···
-        endif
-        " Don't consume the key – pass it through, unless it's <Up>.
-        redraw
+    if s:tryb == 'should-initialize'
+        3PRINT s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
+                    \ s:tryb °°° \s:way ←·→ s:way °°° \a:key ←·→ s:key
+        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", '')
+        " Consume (still somewhat conditionally ↔ depending on the filter)
+        " only the (very first) Up-cursor key. It is sent automatically right
+        " after starting the menu from the «active-command line» state.
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let s:result = popup_filter_menu(a:id, a:key)
