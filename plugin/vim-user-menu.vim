@@ -95,18 +95,18 @@ func! UserMenu_Start(way)
     if s:way !~ '\v^c2=$'
         PRINT 9 User Menu started in s:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
-        7PRINT! p:1.7:hl:gold:User Menu started in Command-Line mode. The current-command line is:
         " Special actions needed for command-line state. 
         if s:way == 'c'
             call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
             call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
             call feedkeys("\<ESC>","n")
-            call add(s:timers, timer_start(100, function("s:deferredMenuReStart")))
+            call add(s:timers, timer_start(20, function("s:deferredMenuReStart")))
             return ""
         endif
 
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
+            7PRINT! p:1.5:hl:gold:User Menu started in Command-Line mode. The current-command line is:
             let s:cmdline_like_msg = "hl:None::" . s:cmdline_like_msg
             7PRINT! s:cmdline_like_msg
         endif
