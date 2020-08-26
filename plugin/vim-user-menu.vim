@@ -201,17 +201,17 @@ func! UserMenu_MainCallback(id, result)
     " Clear the message window.
     echom ""
     " Carefully establish the selection and its data.
-    let [s:it,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
+    let [s:item,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
-        let [s:it,s:got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
-        let [s:type,s:body] = [s:it[1]['type'],s:it[1]['body']]
+        let [s:item,s:got_it] = [s:current_menu[bufnr()][a:result - 1], 1]
+        let [s:type,s:body] = [s:item[1]['type'],s:item[1]['body']]
     endif
 
     " Important, base debug log.
-    2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:it[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
+    2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
     if s:got_it
-        let l:opts = s:it[2]
+        let l:opts = s:item[2]
 
         " Reopen the menu?
         if has_key(l:opts, 'keep-menu-open')
@@ -240,7 +240,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message before the command?
-    call UserMenu_DeployDeferred_TimerTriggered_Message(s:it[1], 'smessage', -1)
+    call UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
     if s:type == 'cmds'
@@ -256,7 +256,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message after the command?
-    call UserMenu_DeployDeferred_TimerTriggered_Message(s:it[1], 'message', 1)
+    call UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'message', 1)
 
     " Cancel ex command?
     if has_key(l:opts, 'exit-to-norm') && had_cmd
