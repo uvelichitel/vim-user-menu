@@ -109,6 +109,7 @@ func! UserMenu_Start(way)
 	    if !s:state_restarting
 		7PRINT! p:1.5:hl:gold:User Menu started in Command-Line mode. The current-command line is:
 	    endif
+            let s:cmdline_like_msg = "hl:None::" . s:cmdline_like_msg . "█"
             7PRINT! s:cmdline_like_msg
         endif
     endif
