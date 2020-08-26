@@ -659,12 +659,14 @@ let s:default_user_menu = [
 func! UserMenu_StartSelectEscape()
     let s:y = maparg("y", "v")
     let s:v = maparg("v", "v")
-    vnoremap y y:<C-R>=UserMenu_EscapeYForSubst(@@)<CR>
+    let s:esc = maparg("\<ESC>", "v")
+    vnoremap y y:<C-R>=UserMenu_EscapeYForSubst(@@,0)<CR>
     vnoremap v <ESC>gv
+    vnoremap <expr> <ESC> UserMenu_EscapeYForSubst(@@,1)
     call feedkeys("v")
 endfunc
 
-func! UserMenu_EscapeYForSubst(sel)
+func! UserMenu_EscapeYForSubst(sel,inactive)
     if !empty(s:y)
         exe 'vnoremap y ' . s:y
     else
@@ -675,7 +677,17 @@ func! UserMenu_EscapeYForSubst(sel)
     else
         vunmap v
     endif
-    return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
+    if !empty(s:esc)
+        exe 'vnoremap <ESC> ' . s:esc
+    else
+        vunmap <ESC>
+    endif
+    if a:inactive
+        5PRINT The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
+        return "\<ESC>"
+    else
+        return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
+    endif
 endfunc
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
