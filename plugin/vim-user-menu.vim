@@ -275,17 +275,17 @@ endfunc
 """""""""""""""""" HELPER FUNCTIONS {{{
 
 " FUNCTION: UserMenu_DeployUserMessage() {{{
-func! UserMenu_DeployUserMessage(dict,key,init,...)
-    if a:init > 0
+func! UserMenu_DeployUserMessage(dict,key,...)
+    if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
         let [s:pauses, s:pause_idx] = [ exists("s:pauses") ? s:pauses : [], exists("s:pause_idx") ? s:pause_idx : 0 ]
     endif
     if has_key(a:dict,a:key) 
         let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]',a:dict[a:key])
-        if a:init >= 0
+        if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
-            call add(s:timers, timer_start(a:0 ? a:1 : 30, function("s:deferredUserMessage")))
+            call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 30, function("s:deferredUserMessage")))
         else
             let s:msg = UserMenu_ExpandVars(s:msg)
             if !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
