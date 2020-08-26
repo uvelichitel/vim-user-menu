@@ -546,7 +546,7 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
 func! UserMenu_RestoreCmdLineFrom(cmds)
-    call feedkeys(a:cmds,"n")
+    call feedkeys(":\<C-U>".a:cmds[1:-1],"n")
 endfunc
 " }}}
 
