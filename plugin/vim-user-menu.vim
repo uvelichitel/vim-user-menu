@@ -719,8 +719,8 @@ func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     let s:y = maparg("y", "v")
     let s:v = maparg("v", "v")
     let s:esc = maparg("\<ESC>", "v")
-    vnoremap v <ESC>gv
     vnoremap y y:<C-R>=UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,0)<CR>
+    vnoremap v <ESC>v
     vnoremap <expr> <ESC> UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,1)
     call feedkeys("v")
 endfunc
