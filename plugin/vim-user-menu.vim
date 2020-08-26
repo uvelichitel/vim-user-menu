@@ -488,8 +488,17 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx,msg) {{{
 func! UserMenu_GetPrefixValue(pfx,msg)
-    let mres = matchlist(a:msg,'\v^'.a:pfx.':([^:]*):(.*)$')
-    return empty(mres) ? [0,a:msg] : mres[1:2]
+    let mres = matchlist( (type(a:msg) == 3 ? a:msg[2] : a:msg),'\v^(.*'.a:pfx.'.*)@<!'.a:pfx.':([^:]*):(.*)$' )
+    echom a:msg[2] "←·→" mres
+    " Special case: a:msg is a List:
+    if type(a:msg) == 3 && !empty(mres)
+        let cpy = deepcopy(a:msg)
+        " Update the message with the content without the prefix-value:
+        let cpy[2] = mres[1].mres[3]
+        return [mres[2],cpy]
+    else
+        return empty(mres) ? [0,a:msg] : [ mres[2], mres[1].mres[3] ]
+    endif
 endfunc
 " }}}
 " FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
