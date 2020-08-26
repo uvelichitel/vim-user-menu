@@ -524,12 +524,12 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_GetPrefixValue(pfx, msg) {{{
 func! UserMenu_GetPrefixValue(pfx, msg)
-    let mres = matchlist( (type(a:msg) == 3 ? (len(a:msg) > 1 ? a:msg[1] : a:msg[0]) : a:msg),'\v^(.{-})'.a:pfx.':([^:]*):(.*)$' )
+    let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.':([^:]*):(.*)$' )
     " Special case → a:msg is a List:
     if type(a:msg) == 3 && !empty(mres)
         let cpy = deepcopy(a:msg)
         " Update the message with the content without the prefix-value:
-        let cpy[1] = mres[1].mres[3]
+        let cpy[0] = mres[1].mres[3]
         return [mres[2],cpy]
     else
         " Regular case → a:msg is a String or no match
