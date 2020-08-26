@@ -167,11 +167,11 @@ func! UserMenu_Start(way)
         call add( s:current_menu[bufnr()], entry )
     endfor
 
-    hi def UMPmenu ctermfg=220 ctermbg=darkblue
-    hi def UMPmenuSB ctermfg=220 ctermbg=darkblue
-    hi def UMPmenuTH ctermfg=220 ctermbg=darkblue
-    hi PopupSelected ctermfg=17 ctermbg=lightblue
-    hi PmenuSel ctermfg=17 ctermbg=lightblue
+    hi! UMPmenu ctermfg=220 ctermbg=darkblue
+    hi! UMPmenuSB ctermfg=220 ctermbg=darkblue
+    hi! UMPmenuTH ctermfg=220 ctermbg=darkblue
+    hi! PopupSelected ctermfg=17 ctermbg=lightblue
+    hi! PmenuSel ctermfg=17 ctermbg=lightblue
 
     call popup_menu( items, #{ 
                 \ callback: 'UserMenu_MainCallback',
@@ -640,36 +640,41 @@ command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,e
 
 command! Menu call UserMenu_Start("n")
 
-hi def um_norm ctermfg=7
-hi def um_blue ctermfg=27
-hi def um_blue1 ctermfg=32
-hi def um_blue2 ctermfg=75
-hi def um_lblue ctermfg=50
-hi def um_lblue2 ctermfg=75 cterm=bold
-hi def um_gold ctermfg=220
-hi def um_yellow ctermfg=190
-hi def um_lyellow ctermfg=yellow cterm=bold
-hi def um_lyellow2 ctermfg=221
-hi def um_lyellow3 ctermfg=226
-hi def um_green ctermfg=green
-hi def um_green2 ctermfg=35
-hi def um_green3 ctermfg=40
-hi def um_green4 ctermfg=82
-hi def um_bgreen ctermfg=green cterm=bold
-hi def um_bgreen2 ctermfg=35 cterm=bold
-hi def um_bgreen3 ctermfg=40 cterm=bold
-hi def um_bgreen4 ctermfg=82 cterm=bold
-hi def um_lgreen ctermfg=lightgreen
-hi def um_lgreen2 ctermfg=118
-hi def um_lgreen3 ctermfg=154
-hi def um_lbgreen ctermfg=lightgreen cterm=bold
-hi def um_lbgreen2 ctermfg=118 cterm=bold
-hi def um_lbgreen3 ctermfg=154 cterm=bold
+hi! um_norm ctermfg=7
+hi! um_blue ctermfg=27
+hi! um_blue1 ctermfg=32
+hi! um_blue2 ctermfg=75
+hi! um_lblue ctermfg=50
+hi! um_lblue2 ctermfg=75 cterm=bold
+hi! um_lblue3 ctermfg=153 cterm=bold
+hi! um_bluemsg ctermfg=123 ctermbg=25 cterm=bold
+hi! um_gold ctermfg=220
+hi! um_yellow ctermfg=190
+hi! um_lyellow ctermfg=yellow cterm=bold
+hi! um_lyellow2 ctermfg=221
+hi! um_lyellow3 ctermfg=226
+hi! um_green ctermfg=green
+hi! um_green2 ctermfg=35
+hi! um_green3 ctermfg=40
+hi! um_green4 ctermfg=82
+hi! um_bgreen ctermfg=green cterm=bold
+hi! um_bgreen2 ctermfg=35 cterm=bold
+hi! um_bgreen3 ctermfg=40 cterm=bold
+hi! um_bgreen4 ctermfg=82 cterm=bold
+hi! um_lgreen ctermfg=lightgreen
+hi! um_lgreen2 ctermfg=118
+hi! um_lgreen3 ctermfg=154
+hi! um_lbgreen ctermfg=lightgreen cterm=bold
+hi! um_lbgreen2 ctermfg=118 cterm=bold
+hi! um_lbgreen3 ctermfg=154 cterm=bold
 
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
 let s:timers = []
 let s:default_user_menu = [
+            \ [ "° BUFFER «LIST» …",
+                    \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
+                            \ opts: [] } ],
             \ [ "° Open …",
                         \ #{ type: 'cmds', body: ':Ex', opts: "in-normal",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
@@ -704,7 +709,7 @@ let s:default_user_menu = [
                         \ #{ type: 'keys', body: "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
-            \ [ "° «Visual» yank in s/…/…/g escaped…",
+            \ [ "° «Visual» yank in s/…/…/g escaped …",
                         \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
                             \ opts: "in-normal",
                             \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
@@ -756,5 +761,58 @@ func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
     endif
 endfunc
+
+" FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionPopup() {{{
+func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
+    hi! UMPmenuBL ctermfg=82 ctermbg=darkblue
+    hi! UMPmenuBLSB ctermfg=82 ctermbg=darkblue
+    hi! UMPmenuBLTH ctermfg=82 ctermbg=darkblue
+    hi! PopupSelected ctermfg=17 ctermbg=82
+    hi! PmenuSel ctermfg=17 ctermbg=82
+
+    let s:current_buffer_list = split(execute('filter! /\[Popup\]/ ls!'),"\n")
+    call popup_menu(s:current_buffer_list, #{
+                \ callback:'UserMenu_ProvidedKitFuns_BufferSelectionCallback',
+                \ time: 30000,
+                \ mapping: 0,
+                \ border: [ ],
+                \ fixed: 0,
+                \ flip: 1,
+                \ title: ' VIM User Menu ≈ Select The Buffer To Switch To: ≈ ',
+                \ drag: 1,
+                \ resize: 1,
+                \ close: 'button',
+                \ highlight: 'UMPmenuBL',
+                \ scrollbarhighlight: 'UMPmenuBLSB',
+                \ thumbhighlight: 'UMPmenuBLTH',
+                \ cursorline: 1,
+                \ borderhighlight: [ 'um_green4', 'um_green4', 'um_green4', 'um_green4' ],
+                \ padding: [ 2, 2, 2, 2 ] } )
+endfunc
+" }}}
+
+" FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
+func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
+    " Selected or cancelled?
+    let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
+    if s:result > 0 && s:result <= len(s:current_buffer_list)
+        let [s:item,s:got_it] = [s:current_buffer_list[s:result - 1], 1]
+    endif
+    " Exit if cancelled.
+    if !s:got_it
+        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
+        return
+    endif
+    
+    let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\+"\([^"]\+\)"\s\+.*' )
+    if empty(s:mres)
+        7PRINT! p:0.5:hl:0:Error: Coudln't parse the buffer listing.
+        return
+    else
+        exe "buf" s:mres[1]
+        7PRINT! p:0.5:hl:bluemsg:Switched to the buffer: ('«'.s:mres[2].'»')
+    endif
+endfunc
+" }}}
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
