@@ -409,9 +409,7 @@ endfunc
 func! s:deferredMenuStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
     call UserMenu_Start(s:way)
-    echohl um_lyellow
-    echom "Opened again the menu."
-    echohl None
+    7PRINT hl:lyellow:Opened again the menu.
     redraw
 endfunc
 " }}}
