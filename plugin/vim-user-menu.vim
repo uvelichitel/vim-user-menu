@@ -88,7 +88,7 @@ func! UserMenu_Start(way)
     let s:cmds = ((s:way == "c2") ? (empty(getcmdline()) ? s:cmds : getcmdline()) : getcmdline())
     PRINT °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
-    call UserMenu_EnsureInit()
+    call s:UserMenu_EnsureInit()
 
     let s:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
     let s:state_to_desc['c2'] = s:state_to_desc['c']
@@ -97,8 +97,8 @@ func! UserMenu_Start(way)
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state. 
         if s:way == 'c'
-            call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
-            call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
+            call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
+            call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
             call feedkeys("\<ESC>","n")
             call add(s:timers, timer_start(10, function("s:deferredMenuReStart")))
             return ""
@@ -162,7 +162,7 @@ func! UserMenu_Start(way)
             continue
         endif
         " Support embedding variables in the text via {var}.
-        let entry[0] = UserMenu_ExpandVars(entry[0])
+        let entry[0] = s:UserMenu_ExpandVars(entry[0])
         call add( items, entry[0] )
         call add( s:current_menu[bufnr()], entry )
     endfor
@@ -226,13 +226,13 @@ func! UserMenu_MainCallback(id, result)
 
     " Should restore the command line?
     let had_cmd = 0
-    if !empty(UserMenu_BufOrSesVar("user_menu_cmode_cmd")) && !s:state_restarting
+    if !empty(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd")) && !s:state_restarting
 	" TODO2: timer, aby przetworzyć te klawisze przed wywołaniem komendy
-        call UserMenu_RestoreCmdLineFrom(UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
+        call s:UserMenu_RestoreCmdLineFrom(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
 	let had_cmd = 1
-        call UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
+        call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
     endif
-    call UserMenu_CleanupSesVars(s:way !~ '\v^c.*' ? 1 : 0)
+    call s:UserMenu_CleanupSesVars(s:way !~ '\v^c.*' ? 1 : 0)
 
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
@@ -244,7 +244,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message before the command?
-    call UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'smessage', -1)
+    call s:UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'smessage', -1)
 
     " Read the attached action specification and perform it.
     if s:type == 'cmds'
@@ -260,7 +260,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Output message after the command?
-    call UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'message', 1)
+    call s:UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'message', 1)
 
     " Cancel ex command?
     if has_key(l:opts, 'exit-to-norm') && had_cmd
@@ -269,48 +269,70 @@ func! UserMenu_MainCallback(id, result)
 
 endfunction
 " }}}
-" FUNCTION: UserMenu_InitFT() {{{
+" FUNCTION: s:UserMenu_InitBufAdd() {{{
 " A function that's called when a new buffor is created.
-func! UserMenu_InitBufAdd() 
+func! s:UserMenu_InitBufAdd() 
     let b:user_menu_cmode_cmd = ""
     let s:current_menu = {}
     let s:current_menu[bufnr()] = []
 endfunc
 " }}}
-" FUNCTION: UserMenu_EnsureInit() {{{
-func! UserMenu_EnsureInit()
+" FUNCTION: s:UserMenu_InitBufRead() {{{
+" A funcion that's called when the buffer is loaded.
+func! s:UserMenu_InitBufRead()
+    call s:UserMenu_InitBufAdd()
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_EnsureInit() {{{
+func! s:UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
-        2PRINT No \b:var detected °° calling: °° « \UserMenu_InitBufAdd() » …
-        call UserMenu_InitBufAdd()
+        2PRINT No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
+        call s:UserMenu_InitBufAdd()
         return 0
     endif
     return 1
 endfunc
 " }}}
-" FUNCTION: UserMenu_InitFileType() {{{
-" A funcion that's called when the buffer is loaded.
-func! UserMenu_InitFileType()
-    call UserMenu_InitBufAdd()
-endfunc
-" }}}
 
 """""""""""""""""" HELPER FUNCTIONS {{{
 
-" FUNCTION: UserMenu_DeployDeferred_TimerTriggered_Message() {{{
-func! UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
+" FUNCTION: UserMenu_KeyFilter() {{{
+func! UserMenu_KeyFilter(id,key)
+    redraw
+    let s:tryb = s:UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
+    let s:key = a:key
+    if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
+    if s:tryb == 'should-initialize'
+        3PRINT s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
+                    \ s:tryb °°° \s:way ←·→ s:way °°° \a:key ←·→ s:key
+        call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", '')
+        " Consume (still somewhat conditionally ↔ depending on the filter)
+        " only the (very first) Up-cursor key. It is sent automatically right
+        " after starting the menu from the «active-command line» state.
+        return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
+    else
+        let s:result = popup_filter_menu(a:id, a:key)
+        3PRINT s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+                    \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
+        redraw
+        return s:result
+    endif
+endfunc " }}}
+" FUNCTION: s:UserMenu_DeployDeferred_TimerTriggered_Message() {{{
+func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
         let [s:pauses, s:pause_idx] = [ exists("s:pauses") ? s:pauses : [], exists("s:pause_idx") ? s:pause_idx : 0 ]
     endif
     if has_key(a:dict,a:key) 
-        let [s:pause,s:msg] = UserMenu_GetPrefixValue('p%[ause]', a:dict[a:key])
+        let [s:pause,s:msg] = s:UserMenu_GetPrefixValue('p%[ause]', a:dict[a:key])
         if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
             call add(s:pauses, s:pause)
             call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 20, function("s:deferredMessageShow")))
             let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
-            let s:msg = UserMenu_ExpandVars(s:msg)
+            let s:msg = s:UserMenu_ExpandVars(s:msg)
             if type(s:msg) == 3 || !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
                 if type(s:msg) == 3
                     call s:msg(10, s:msg)
@@ -324,28 +346,6 @@ func! UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_KeyFilter() {{{
-func! UserMenu_KeyFilter(id,key)
-    redraw
-    let s:tryb = UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
-    let s:key = a:key
-    if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
-    if s:tryb == 'should-initialize'
-        3PRINT s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
-                    \ s:tryb °°° \s:way ←·→ s:way °°° \a:key ←·→ s:key
-        call UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", '')
-        " Consume (still somewhat conditionally ↔ depending on the filter)
-        " only the (very first) Up-cursor key. It is sent automatically right
-        " after starting the menu from the «active-command line» state.
-        return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
-    else
-        let s:result = popup_filter_menu(a:id, a:key)
-        3PRINT s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
-                    \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
-        redraw
-        return s:result
-    endif
-endfunc " }}}
 " FUNCTION: s:msg(hl,...) {{{
 " 0 - error         LLEV=0 will show only them
 " 1 - warning       LLEV=1
@@ -383,9 +383,9 @@ func! s:msg(hl, ...)
         if start_idx == -1
             " A variable?
             if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=\s*$'
-                let arg = UserMenu_ExpandVars("{".arg."}")
+                let arg = s:UserMenu_ExpandVars("{".arg."}")
             " A function call or an expression wrapped in parens?
-            elseif arg =~# '\v^\s*([a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
+            elseif arg =~# '\v^\s*(([sgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
                 let arg = eval(arg)
             " A \-quoted atom?
             elseif arg[0] == '\'
@@ -401,7 +401,7 @@ func! s:msg(hl, ...)
     " Finally: detect any hl:…: prefix, select the color, output the message.
     let c = ["Error", "WarningMsg", "um_gold", "um_green4", "um_blue", "None"]
     " Separate-out the possible hl:…: infix – try in/from the first 3 arguments.
-    let [val,new_arg] = UserMenu_GetPrefixValue("hl", join(args[0:2]))
+    let [val,new_arg] = s:UserMenu_GetPrefixValue("hl", join(args[0:2]))
     let args[0:min([len(args)-1,2])] = extend([new_arg],repeat([''], min([len(args),3]) - 1))
     let args = filter(args, "v:val != ''")
     let hl = !empty(val) ? (val =~# '^\d\+$' ? c[val] : val) : c[hl]
@@ -415,7 +415,7 @@ endfunc
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
 func! s:msgcmdimpl(hl, bang, linenum, ...)
     if(!empty(a:bang))
-        call UserMenu_DeployDeferred_TimerTriggered_Message(
+        call s:UserMenu_DeployDeferred_TimerTriggered_Message(
                     \ #{ m: (a:hl < 7 ? extend(["[".a:linenum."]"], a:000) : a:000) }, 'm', 1)
     else
         if type(a:000[0][1]) == 1 && a:000[0][1] =~ '\v^\[\d+\]$'
@@ -451,9 +451,9 @@ endfunc
 func! s:deferredMessageShow(timer)
     call filter( s:timers, 'v:val != a:timer' )
     if type(s:msgs[s:msg_idx]) == 3
-        call s:msg(10,UserMenu_ExpandVars(s:msgs[s:msg_idx]))
+        call s:msg(10,s:UserMenu_ExpandVars(s:msgs[s:msg_idx]))
     else
-        10PRINT UserMenu_ExpandVars(s:msgs[s:msg_idx])
+        10PRINT s:UserMenu_ExpandVars(s:msgs[s:msg_idx])
     endif
     let pause = s:pauses[s:pause_idx]
     let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
@@ -467,14 +467,14 @@ func! s:UserMenu_DoPause(pause_value)
         let s:pause_value = float2nr(round(str2float(a:pause_value) * 1000.0))
     endif
     if s:pause_value =~ '\v^-=\d+$' && s:pause_value > 0
-        call UserMenu_PauseAllTimers(1, s:pause_value + 10)
+        call s:UserMenu_PauseAllTimers(1, s:pause_value + 10)
         exe "sleep" s:pause_value."m"
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_BufOrSesVar() {{{
+" FUNCTION: s:UserMenu_BufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_BufOrSesVar(var_to_read,...)
+func! s:UserMenu_BufOrSesVar(var_to_read,...)
     let s:tmp = a:var_to_read
     if exists("s:" . a:var_to_read)
         return get( s:, a:var_to_read, a:0 ? a:1 : '' )
@@ -486,9 +486,9 @@ func! UserMenu_BufOrSesVar(var_to_read,...)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_CleanupSesVars() {{{
+" FUNCTION: s:UserMenu_CleanupSesVars() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_CleanupSesVars(...)
+func! s:UserMenu_CleanupSesVars(...)
     if has_key(s:,'user_menu_init_cmd_mode')
         call remove(s:,'user_menu_init_cmd_mode')
     endif
@@ -499,9 +499,9 @@ func! UserMenu_CleanupSesVars(...)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_BufOrSesVarSet() {{{
+" FUNCTION: s:UserMenu_BufOrSesVarSet() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
+func! s:UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
     let s:tmp = a:var_to_set
     if exists("s:" . a:var_to_set)
         let s:[a:var_to_set] = a:value_to_set
@@ -523,9 +523,9 @@ func! UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_ExpandVars {{{
+" FUNCTION: s:UserMenu_ExpandVars {{{
 " It expands all {:command …'s} and {[sgb]:user_variable's}.
-func! UserMenu_ExpandVars(text_or_texts)
+func! s:UserMenu_ExpandVars(text_or_texts)
     if type(a:text_or_texts) == 3
         " List input.
         let texts=deepcopy(a:text_or_texts)
@@ -541,8 +541,8 @@ func! UserMenu_ExpandVars(text_or_texts)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_GetPrefixValue(pfx, msg) {{{
-func! UserMenu_GetPrefixValue(pfx, msg)
+" FUNCTION: s:UserMenu_GetPrefixValue(pfx, msg) {{{
+func! s:UserMenu_GetPrefixValue(pfx, msg)
     let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.':([^:]*):(.*)$' )
     " Special case → a:msg is a List:
     if type(a:msg) == 3 && !empty(mres)
@@ -556,27 +556,26 @@ func! UserMenu_GetPrefixValue(pfx, msg)
     endif
 endfunc
 " }}}
-" FUNCTION: UserMenu_RestoreCmdLineFrom() {{{
-func! UserMenu_RestoreCmdLineFrom(cmds)
+" FUNCTION: s:UserMenu_RestoreCmdLineFrom() {{{
+func! s:UserMenu_RestoreCmdLineFrom(cmds)
     call feedkeys(":\<C-U>".a:cmds[1:-1],"n")
 endfunc
 " }}}
 
-" FUNCTION: UserMenu_PauseAllTimers() {{{
-func! UserMenu_PauseAllTimers(pause,time)
+" FUNCTION: s:UserMenu_PauseAllTimers() {{{
+func! s:UserMenu_PauseAllTimers(pause,time)
     for t in s:timers
         call timer_pause(t,a:pause)
     endfor
 
     if a:pause && a:time > 0
         " Limit the amount of time of the pause.
-        call add(s:timers, timer_start(a:time, function("UserMenu_UnPauseAllTimersCallback")))
+        call add(s:timers, timer_start(a:time, function("s:UserMenu_UnPauseAllTimersCallback")))
     endif
 endfunc
 " }}}
-
-" FUNCTION: UserMenu_UnPauseAllTimersCallback() {{{
-func! UserMenu_UnPauseAllTimersCallback(timer)
+" FUNCTION: s:UserMenu_UnPauseAllTimersCallback() {{{
+func! s:UserMenu_UnPauseAllTimersCallback(timer)
     call filter( s:timers, 'v:val != a:timer' )
     for t in s:timers
         call timer_pause(t,0)
@@ -628,8 +627,8 @@ endfunc
 
 augroup UserMenu_InitGroup
     au!
-    au BufAdd * call UserMenu_InitBufAdd()
-    au BufRead * call UserMenu_InitFileType()
+    au BufAdd * call s:UserMenu_InitBufAdd()
+    au BufRead * call s:UserMenu_InitBufRead()
 augroup END
 
 inoremap <expr> <F12> UserMenu_Start("i")
@@ -642,8 +641,10 @@ onoremap <expr> <F12> UserMenu_Start("o")
 " Print command.
 command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
 
+" Menu command.
 command! Menu call UserMenu_Start("n")
 
+" Common highlight definitions.
 hi! um_norm ctermfg=7
 hi! um_blue ctermfg=27
 hi! um_blue1 ctermfg=32
@@ -672,9 +673,12 @@ hi! um_lbgreen ctermfg=lightgreen cterm=bold
 hi! um_lbgreen2 ctermfg=118 cterm=bold
 hi! um_lbgreen3 ctermfg=154 cterm=bold
 
+" Session-variables initialization.
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
 let s:timers = []
+
+" The default, provided menu.
 let s:default_user_menu = [
             \ [ "° BUFFER «LIST» …",
                     \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
@@ -734,6 +738,7 @@ let s:default_user_menu = [
 
 """""""""""""""""" IN-MENU USE FUNCTIONS (THE PROVIDED-KIT FUNCTIONS) {{{
 
+" FUNCTION: UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst() {{{
 func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     let s:y = maparg("y", "v")
     let s:v = maparg("v", "v")
@@ -743,7 +748,8 @@ func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     vnoremap <expr> <ESC> UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,1)
     call feedkeys("v")
 endfunc
-
+" }}}
+" FUNCTION: UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive) {{{
 func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
     if !empty(s:y)
         exe 'vnoremap y ' . s:y
@@ -768,6 +774,7 @@ func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
     endif
 endfunc
+" }}}
 
 " FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionPopup() {{{
 func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
@@ -824,7 +831,6 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     endif
 endfunc
 " }}}
-
 
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionPopup() {{{
 func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
