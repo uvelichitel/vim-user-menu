@@ -842,7 +842,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
                 \ border: [ ],
                 \ fixed: 1,
                 \ wrap: 0,
-                \ maxheight: &lines-8,
+                \ maxheight: &lines-10,
                 \ maxwidth: &columns-20,
                 \ flip: 1,
                 \ title: ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
