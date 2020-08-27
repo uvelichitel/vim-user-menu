@@ -19,7 +19,8 @@ approach:
    forgotten.
 2. There's no sense of disorder gradually arising, as there's no dark-area of
    vimrc that's growing.
-3. It might be cool to for a difference *select* something in Vim, rather than
+3. It's a new, more advanced level of storage of Vim code/commands.
+4. It might be cool to for a difference *select* something in Vim, rather than
    to invoke a keystroke-command.
 
 ## Presentations
@@ -32,4 +33,13 @@ The feature — ability to edit the command line:
 
 [![asciicast](https://asciinema.org/a/354825.svg)](https://asciinema.org/a/354825)
 
-<!-- vim:set tw=80 autoindent fo+=a1n: -->
+The two advanced provided functionalities — the buffer- and jump-list popup menus:
+
+[![asciicast](https://asciinema.org/a/356128.svg)](https://asciinema.org/a/356128)
+
+## Usage
+
+The default binding is **`<F12>`** — pressing it will open the **default**,
+**example** menu presented in the above Asciicasts.
+
+<!-- vim:set tw=80 autoindent fo+=a1n: --> 
