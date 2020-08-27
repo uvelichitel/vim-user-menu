@@ -180,13 +180,17 @@ func! UserMenu_Start(way)
                 \ time: 30000,
                 \ mapping: 0,
                 \ border: [ ],
-                \ fixed: 0,
+                \ fixed: 1,
+                \ wrap: 0,
+                \ maxheight: &lines-8,
+                \ maxwidth: &columns-20,
                 \ flip: 1,
                 \ title: ' VIM User Menu ≈ ' . s:state_to_desc[s:way] . ' ≈ ',
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
                 \ highlight: 'UMPmenu',
+                \ scrollbar: 1,
                 \ scrollbarhighlight: 'UMPmenuSB',
                 \ thumbhighlight: 'UMPmenuTH',
                 \ cursorline: 1,
@@ -675,6 +679,9 @@ let s:default_user_menu = [
             \ [ "° BUFFER «LIST» …",
                     \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
                             \ opts: [] } ],
+            \ [ "° JUMP «LIST» …",
+                    \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
+                            \ opts: [] } ],
             \ [ "° Open …",
                         \ #{ type: 'cmds', body: ':Ex', opts: "in-normal",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
@@ -725,7 +732,7 @@ let s:default_user_menu = [
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
 
-"""""""""""""""""" IN-MENU USE FUNCTIONS {{{
+"""""""""""""""""" IN-MENU USE FUNCTIONS (THE PROVIDED-KIT FUNCTIONS) {{{
 
 func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     let s:y = maparg("y", "v")
@@ -776,13 +783,17 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
                 \ time: 30000,
                 \ mapping: 0,
                 \ border: [ ],
-                \ fixed: 0,
+                \ fixed: 1,
+                \ wrap: 0,
+                \ maxheight: &lines-4,
+                \ maxwidth: &columns-20,
                 \ flip: 1,
                 \ title: ' VIM User Menu ≈ Select The Buffer To Switch To: ≈ ',
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
                 \ highlight: 'UMPmenuBL',
+                \ scrollbar: 1,
                 \ scrollbarhighlight: 'UMPmenuBLSB',
                 \ thumbhighlight: 'UMPmenuBLTH',
                 \ cursorline: 1,
@@ -790,7 +801,6 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
                 \ padding: [ 2, 2, 2, 2 ] } )
 endfunc
 " }}}
-
 " FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
 func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     " Selected or cancelled?
@@ -806,7 +816,7 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     
     let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\+"\([^"]\+\)"\s\+.*' )
     if empty(s:mres)
-        7PRINT! p:0.5:hl:0:Error: Coudln't parse the buffer listing.
+        7PRINT! p:0.5:hl:0:Error: Couldn't parse the buffer listing.
         return
     else
         exe "buf" s:mres[1]
@@ -815,4 +825,77 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
 endfunc
 " }}}
 
+
+" FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionPopup() {{{
+func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
+    hi! UMPmenuJL ctermfg=lightyellow ctermbg=22
+    hi! UMPmenuJLSB ctermfg=51 ctermbg=darkblue
+    hi! UMPmenuJLTH ctermfg=51 ctermbg=darkblue
+    hi! PopupSelected ctermfg=17 ctermbg=82
+    hi! PmenuSel ctermfg=17 ctermbg=82
+
+    let s:current_jump_list = split(execute('jumps'),"\n")[1:]
+    call popup_menu(s:current_jump_list, #{
+                \ callback:'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
+                \ time: 30000,
+                \ mapping: 0,
+                \ border: [ ],
+                \ fixed: 1,
+                \ wrap: 0,
+                \ maxheight: &lines-8,
+                \ maxwidth: &columns-20,
+                \ flip: 1,
+                \ title: ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
+                \ drag: 1,
+                \ resize: 0,
+                \ close: 'button',
+                \ highlight: 'UMPmenuJL',
+                \ scrollbar: 1,
+                \ scrollbarhighlight: 'UMPmenuJLSB',
+                \ thumbhighlight: 'UMPmenuJLTH',
+                \ cursorline: 1,
+                \ borderhighlight: [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
+                \ padding: [ 2, 2, 2, 2 ] } )
+endfunc
+" }}}
+" FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
+func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
+    " Selected or cancelled?
+    let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
+    if s:result > 0 && s:result <= len(s:current_jump_list)
+        let [s:item,s:got_it] = [s:current_jump_list[s:result - 1], 1]
+    endif
+    " Exit if cancelled.
+    if !s:got_it
+        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
+        return
+    endif
+    
+    let s:curjump = -1
+    " 1-based ↔ adapted to a:result
+    let idx = 1
+    for jump in s:current_jump_list
+        if jump =~ '^\s*>.*$'
+            let s:curjump = idx
+            break
+        endif
+        let idx += 1
+    endfor
+    let s:j = s:result - s:curjump
+    let s:mres = matchlist( s:item,'^\s*\%(\d\+\s\+\)\{3}\(.\+\)$' )
+    let s:mres = empty(s:mres) ? ["",""] : s:mres
+    if s:j < 0
+        execute "normal " . (-s:j) . "\<c-o>"
+        7PRINT! p:0.2:hl:bluemsg:Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
+    elseif s:j > 0
+        execute "normal " . s:j . "\<c-i>"
+        7PRINT! p:0.2:hl:bluemsg:Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
+    else
+        7PRINT! p:0.5:hl:bluemsg:Already at the position.
+    endif
+endfunc
+" }}}
+
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
+
+" vim:set ft=vim tw=80 foldmethod=marker:
