@@ -129,7 +129,7 @@ func! UserMenu_Start(way)
 	let opts_in = (type(opts_key) == 3) ? opts_key : split(opts_key, '\v(\s+|,)')
 	call add(entry, {})
 	call filter( opts_in, "!empty(extend(entry[2], { v:val : 1 }))" )
-	let opts = entry[2]
+	let s:opts = entry[2]
 '
         " Verify show-if
         if has_key(entry[1], 'show-if')
@@ -138,23 +138,23 @@ func! UserMenu_Start(way)
 
         let [reject,accept] = [ 0, 0 ]
         " The item shown only when the menu started in insert mode?
-        if has_key(l:opts, 'in-insert') && !has_key(l:opts,'always-show')
+        if has_key(s:opts, 'in-insert') && !has_key(s:opts,'always-show')
             if s:way !~# '\v^(R[cvx]=|i[cx]=)' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in normal mode?
-        if has_key(l:opts, 'in-normal') && !has_key(l:opts,'always-show')
+        if has_key(s:opts, 'in-normal') && !has_key(s:opts,'always-show')
             if s:way !~# '\v^n(|o|ov|oV|oCTRL-V|iI|iR|iV).*' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started in visual mode?
-        if has_key(l:opts, 'in-visual') && !has_key(l:opts,'always-show')
+        if has_key(s:opts, 'in-visual') && !has_key(s:opts,'always-show')
             if s:way !~# '\v^([vV]|CTRL-V|[sS]|CTRL-S)$' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when entering commands?
-        if has_key(l:opts, 'in-ex') && !has_key(l:opts,'always-show')
+        if has_key(s:opts, 'in-ex') && !has_key(s:opts,'always-show')
             if s:way !~# '\v^c[ve]=' | let reject += 1 | else | let accept += 1 | endif
         endif
         " The item shown only when the menu started when a job is running?
-        if has_key(l:opts, 'in-sh') && !has_key(l:opts,'always-show')
+        if has_key(s:opts, 'in-sh') && !has_key(s:opts,'always-show')
             if s:way !~# '\v^[!t]$' | let reject += 1 | else | let accept += 1 | endif
         endif
 
@@ -215,22 +215,21 @@ func! UserMenu_MainCallback(id, result)
     2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
     if s:got_it
-        let l:opts = s:item[2]
+        let s:opts = s:item[2]
 
         " Reopen the menu?
-        if has_key(l:opts, 'keep-menu-open')
+        if has_key(s:opts, 'keep-menu-open')
             call add(s:timers, timer_start(170, function("s:deferredMenuReStart")))
             let s:state_restarting = 1
         endif
     endif
 
     " Should restore the command line?
-    let had_cmd = 0
+    let s:had_cmd = 0
     if !empty(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd")) && !s:state_restarting
 	" TODO2: timer, aby przetworzyć te klawisze przed wywołaniem komendy
-        call s:UserMenu_RestoreCmdLineFrom(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd"))
-	let had_cmd = 1
-        call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
+        call add(s:timers,timer_start(5, function("s:UserMenu_RestoreCmdLine")))
+	let s:had_cmd = 1
     endif
     call s:UserMenu_CleanupSesVars(s:way !~ '\v^c.*' ? 1 : 0)
 
@@ -239,12 +238,19 @@ func! UserMenu_MainCallback(id, result)
         if a:result > len(a:result)
             0PRINT Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
-
         return
     endif
 
     " Output message before the command?
     call s:UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'smessage', -1)
+
+    " Continue in the callback to fully leave the popup.
+    call add( s:timers, timer_start(10, function("s:UserMenu_ExecuteCommand")) )
+endfunction
+" }}}
+" FUNCTION: s:UserMenu_ExecuteCommand() {{{
+func! s:UserMenu_ExecuteCommand(timer)
+    call filter( s:timers, 'v:val != a:timer' )
 
     " Read the attached action specification and perform it.
     if s:type == 'cmds'
@@ -263,11 +269,10 @@ func! UserMenu_MainCallback(id, result)
     call s:UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'message', 1)
 
     " Cancel ex command?
-    if has_key(l:opts, 'exit-to-norm') && had_cmd
+    if has_key(s:opts, 'exit-to-norm') && s:had_cmd
 	call feedkeys("\<C-U>\<BS>","n")
     endif
-
-endfunction
+endfunc
 " }}}
 " FUNCTION: s:UserMenu_InitBufAdd() {{{
 " A function that's called when a new buffor is created.
@@ -557,8 +562,11 @@ func! s:UserMenu_GetPrefixValue(pfx, msg)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_RestoreCmdLineFrom() {{{
-func! s:UserMenu_RestoreCmdLineFrom(cmds)
-    call feedkeys(":\<C-U>".a:cmds[1:-1],"n")
+func! s:UserMenu_RestoreCmdLine(timer)
+    call filter( s:timers, 'v:val != a:timer' )
+    call feedkeys(":\<C-U>".(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd")[1:]),"ntxi!")
+    call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
+    redraw
 endfunc
 " }}}
 
