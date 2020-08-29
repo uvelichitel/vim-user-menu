@@ -123,6 +123,9 @@ func! UserMenu_Start(way)
     for mitem in menu
         if type(mitem) == 1 && mitem =~ '^KIT:'
             let menu[idx] = g:user_menu_kit[mitem]
+        elseif type(mitem) == 3 && mitem[1] =~ '^KIT:' && len(mitem) == 3 && type(mitem[2]) == 4
+            let menu[idx] = [ mitem[0], g:user_menu_kit[mitem[1]][1] ]
+            let menu[idx][1]['opts'] = mitem[2]['opts']
         elseif type(mitem) == 3 && mitem[1] =~ '^KIT:'
             let menu[idx] = [ mitem[0], g:user_menu_kit[mitem[1]][1] ]
         endif
