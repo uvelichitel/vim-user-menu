@@ -123,11 +123,27 @@ func! UserMenu_Start(way)
     for mitem in menu
         if type(mitem) == 1 && mitem =~ '^KIT:'
             let menu[idx] = g:user_menu_kit[mitem]
+        " let g:user_menu = [ ["custom-name", "KIT:…", #{opts:'…'} ], … ]
         elseif type(mitem) == 3 && mitem[1] =~ '^KIT:' && len(mitem) == 3 && type(mitem[2]) == 4
             let menu[idx] = [ mitem[0], g:user_menu_kit[mitem[1]][1] ]
             let menu[idx][1]['opts'] = mitem[2]['opts']
+        " let g:user_menu = [ ["custom-name", "KIT:…" ], … ]
         elseif type(mitem) == 3 && mitem[1] =~ '^KIT:'
             let menu[idx] = [ mitem[0], g:user_menu_kit[mitem[1]][1] ]
+        " let g:user_menu = [ #{ kit:"…", name:"…", opts:'…' }, … ]
+        elseif type(mitem) == 4
+            if !has_key(mitem, 'kit')
+                7PRINT p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
+                continue
+            endif
+            if mitem['kit'] !~ '^KIT:'
+                let mitem['kit'] = 'KIT:'.mitem['kit']
+            endif
+            let menu[idx] = [ has_key(mitem, 'name') ? mitem['name'] : g:user_menu_kit[mitem['kit'][0]],
+                        \ g:user_menu_kit[mitem['kit']][1] ]
+            if has_key(mitem, 'opts')
+                let menu[idx][1]['opts'] = mitem['opts']
+            endif
         endif
         let idx += 1
     endfor
