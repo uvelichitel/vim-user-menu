@@ -118,7 +118,14 @@ func! UserMenu_Start(way)
     let [opr,ops] = [ '(^|[[:space:]]+|,)', '([[:space:]]+|,|$)' ]
 
     " The source of the menu…
-    let menu = deepcopy(get(g:,'user_menu', s:default_user_menu))
+    let menu = deepcopy(get(g:,'user_menu', g:user_menu_default))
+    let idx = 0
+    for mitem in menu
+        if type(mitem) == 1 && mitem =~ '^KIT:'
+            let menu[idx] = g:user_menu_kit[mitem]
+        endif
+        let idx += 1
+    endfor
     " … and the temporary (it'll exist till the selection), built effect of it.
     let s:current_menu[bufnr()] = []
     " The list of items passed to popup_menu()
@@ -687,18 +694,23 @@ let s:state_restarting = 0
 let s:timers = []
 
 " The default, provided menu.
-let s:default_user_menu = [
-            \ [ "° BUFFER «LIST» …",
+let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save", 
+            \ "KIT:save-all-quit", "KIT:toggle-vichord-mode", "KIT:toggle-auto-popmenu",
+            \ "KIT:new-win", "KIT:visual-to-subst-escaped", "KIT:visual-yank-to-subst-escaped",
+            \ "KIT:capitalize", "KIT:escape-cmd-line" ]
+
+let g:user_menu_kit = {
+            \ "KIT:buffers" : [ "° BUFFER «LIST» …",
                     \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
                             \ opts: [] } ],
-            \ [ "° JUMP «LIST» …",
+            \ "KIT:jumps" : [ "° JUMP «LIST» …",
                     \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
                             \ opts: [] } ],
-            \ [ "° Open …",
+            \ "KIT:open" : [ "° Open …",
                         \ #{ type: 'cmds', body: ':Ex', opts: "in-normal",
                             \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
                             \ message: "p:1:hl:gold:Explorer started correctly."} ],
-            \ [ "° Save current buffer",
+            \ "KIT:save" : [ "° Save current buffer",
                        \ #{ type: 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
                             \ smessage:'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
                                 \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
@@ -706,41 +718,41 @@ let s:default_user_menu = [
                                     \ saved under: " . expand("%")] | endif }
                                 \{g:_m}',
                             \ opts: "in-normal", message: "p:1:hl:2:{g:_sr}" } ],
-            \ [ "° Save all & Quit",
+            \ "KIT:save-all-quit" :[ "° Save all & Quit",
                        \ #{ type: 'cmds', body: ':q', smessage: "p:2:hl:2:Quitting Vim
                            \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
                                \ modified: {&modified}.", opts: "in-normal" } ],
-            \ [ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
+            \ "KIT:toggle-vichord-mode" :[ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
                             \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
                             \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
                             \ message: "p:1:hl:lblue2:The new state: {g:vichord_search_in_let}." } ],
-            \ [ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
+            \ "KIT:toggle-auto-popmenu" :[ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
                         \ #{ show-if: "exists('g:apc_loaded')",
                             \ type: 'cmds', body: 'if get(b:,"apc_enable",0) | ApcDisable |
                                 \ else | ApcEnable | endif', opts: "keep-menu-open",
                             \ message: "p:1:hl:lblue2:The new state: {b:apc_enable}." } ],
-            \ [ "° New buffer",
+            \ "KIT:new-win" :[ "° New buffer",
                         \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
                             \ message: "p:1:New buffer created."} ],
-            \ [ "° The «visual-selection» in s/…/…/g escaped",
+            \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
                         \ #{ type: 'keys', body: "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
                             \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
-            \ [ "° «Visual» yank in s/…/…/g escaped …",
+            \ "KIT:visual-yank-to-subst-escaped" :[ "° «Visual» yank in s/…/…/g escaped …",
                         \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
                             \ opts: "in-normal",
                             \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
-            \ [ "° Upcase _front_ letters in the «selected» words",
+            \ "KIT:capitalize" :[ "° Upcase _front_ letters in the «selected» words",
                         \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ opts: "in-visual",
                             \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
-            \ [ "° Escape the «command-line»",
+            \ "KIT:escape-cmd-line" :[ "° Escape the «command-line»",
                         \ #{ type: 'keys', body: "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
                                 \'\\n','\\\\n','g')\<CR>",
                             \ opts: ['in-ex'] } ]
-            \ ]
+            \ }
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
 
