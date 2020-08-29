@@ -428,12 +428,12 @@ endfunc
 func! s:msgcmdimpl(hl, bang, linenum, ...)
     if(!empty(a:bang))
         call s:UserMenu_DeployDeferred_TimerTriggered_Message(
-                    \ #{ m: (a:hl < 7 ? extend(["[".a:linenum."]"], a:000) : a:000) }, 'm', 1)
+                    \ #{ m: (a:hl < 7 ? extend(["[".a:linenum."]"], a:000[0]) : a:000[0]) }, 'm', 1)
     else
-        if type(a:000[0][1]) == 1 && a:000[0][1] =~ '\v^\[\d+\]$'
-            call s:msg(a:hl, a:000)
+        if exists("a:000[0][1]") && type(a:000[0][1]) == 1 && a:000[0][1] =~ '\v^\[\d+\]$'
+            call s:msg(a:hl, a:000[0])
         else
-            call s:msg(a:hl, extend(["[".a:linenum."]"], a:000))
+            call s:msg(a:hl, extend(["[".a:linenum."]"], a:000[0]))
         endif
     endif
 endfunc
@@ -654,7 +654,8 @@ cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
 onoremap <expr> <F12> UserMenu_Start("o")
 
 " Print command.
-command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),<f-args>)
+command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
+            \ map([<f-args>], "v:val =~ '^[sbgla]:[a-zA-Z0-9_]\+(\[[^]\+\])\=$' ? eval(v:val) : v:val"))
 
 " Menu command.
 command! Menu call UserMenu_Start("n")
