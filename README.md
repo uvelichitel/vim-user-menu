@@ -65,7 +65,7 @@ let g:user_menu = [
 \ ]
 ```
 
-The menu-kit entries are:
+The menu-kit entries are the following — prepended with *KIT:…*:
 
 - buffers, 
 - jumps, 
