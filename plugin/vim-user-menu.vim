@@ -655,7 +655,7 @@ onoremap <expr> <F12> UserMenu_Start("o")
 
 " Print command.
 command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
-            \ map([<f-args>], "v:val =~ '^[sbgla]:[a-zA-Z0-9_]\+(\[[^]\+\])\=$' ? eval(v:val) : v:val"))
+           \ map([<f-args>], 'v:val =~ ''\v^[sbgla]:[a-zA-Z0-9_]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
 " Menu command.
 command! Menu call UserMenu_Start("n")
