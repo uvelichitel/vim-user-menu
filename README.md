@@ -43,7 +43,7 @@ The default binding is **`<F12>`** — pressing it will open the **default**,
 **example** menu presented in the above Asciicasts.
 
 The default menu consists of multiple provided entries, which are being called
-the "*menu kit*". You can reuse the kit's entries when building your own menu,
+the "**_menu kit_**". You can reuse the kit's entries when building your own menu,
 as described below.
 
 ### Your own menu (entries…)
@@ -59,15 +59,25 @@ let g:user_menu = [
 
 " How to reuse the default's menu items — the menu kit:
 let g:user_menu = [
-   \     "KIT:buffers",                                             " The buffer list
-   \     [ "List buffers", "KIT:buffers"],                          " The buffer list under an non-standard name
+   \     "KIT:buffers",                         " The buffer list
+   \     [ "List buffers", "KIT:buffers"],      " The buffer list under an non-standard name
    \     #{ name:"List buffers", kit:"buffers", opts:"in-visual"}   " An alternate syntax
 \ ]
 ```
 
-The menu-kit entries are: **buffers**, **jumps**, **open**, **save**,
-**save-all-quit**, **toggle-vichord-mode**, **toggle-auto-popmenu**,
-**new-win**, **visual-to-subst-escaped**, **visual-yank-to-subst-escaped**,
-**capitalize**, **escape-cmd-line**,
+The menu-kit entries are:
+
+- buffers, 
+- jumps, 
+- open, 
+- save, 
+- save-all-quit, 
+- toggle-vichord-mode, 
+- toggle-auto-popmenu, 
+- new-win, 
+- visual-to-subst-escaped, 
+- visual-yank-to-subst-escaped, 
+- capitalize,
+- escape-cmd-line.
 
 <!-- vim:set tw=80 autoindent fo+=a1n: --> 
