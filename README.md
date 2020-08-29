@@ -42,4 +42,32 @@ The two advanced provided functionalities — the buffer- and jump-list popup me
 The default binding is **`<F12>`** — pressing it will open the **default**,
 **example** menu presented in the above Asciicasts.
 
+The default menu consists of multiple provided entries, which are being called
+the "*menu kit*". You can reuse the kit's entries when building your own menu,
+as described below.
+
+### Your own menu (entries…)
+
+```vim
+" The 4 types of menu items:
+let g:user_menu = [
+        \ [ "Item 1", #{ type: 'cmds', body: "sequence of :ex commands" } ],
+        \ [ "Item 2", #{ type: 'norm', body: ":norm sequence of commands" } ],
+        \ [ "Item 3", #{ type: 'keys', body: "sequence of keys like e.g.: \<C-W>n" } ],
+        \ [ "Item 4", #{ type: 'expr', body: "the expression to run, like e.g.: MyFunction()" } ]
+\ ]
+
+" How to reuse the default's menu items — the menu kit:
+let g:user_menu = [
+   \     "KIT:buffers",                                             " The buffer list
+   \     [ "List buffers", "KIT:buffers"],                          " The buffer list under an non-standard name
+   \     #{ name:"List buffers", kit:"buffers", opts:"in-visual"}   " An alternate syntax
+\ ]
+```
+
+The menu-kit entries are: **buffers**, **jumps**, **open**, **save**,
+**save-all-quit**, **toggle-vichord-mode**, **toggle-auto-popmenu**,
+**new-win**, **visual-to-subst-escaped**, **visual-yank-to-subst-escaped**,
+**capitalize**, **escape-cmd-line**,
+
 <!-- vim:set tw=80 autoindent fo+=a1n: --> 
