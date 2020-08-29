@@ -90,10 +90,10 @@ func! UserMenu_Start(way)
 
     call s:UserMenu_EnsureInit()
 
-    let s:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
-    let s:state_to_desc['c2'] = s:state_to_desc['c']
+    let l:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
+    let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        PRINT 9 User Menu started in s:state_to_desc[s:way] mode.
+        PRINT 9 User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state. 
         if s:way == 'c'
@@ -192,7 +192,7 @@ func! UserMenu_Start(way)
                 \ maxheight: &lines-8,
                 \ maxwidth: &columns-20,
                 \ flip: 1,
-                \ title: ' VIM User Menu ≈ ' . s:state_to_desc[s:way] . ' ≈ ',
+                \ title: ' VIM User Menu ≈ ' . l:state_to_desc[s:way] . ' ≈ ',
                 \ drag: 1,
                 \ resize: 1,
                 \ close: 'button',
@@ -453,8 +453,8 @@ func! s:deferredMenuReStart(timer)
     endif
     call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
-        let s:state_to_desc = #{ n:'Normal', i:'Insert', v:'Visual', o:'o' }
-        7PRINT hl:lyellow3:Opened again the menu in s:state_to_desc[s:way] mode.
+        let l:state_to_desc = #{ n:'Normal', i:'Insert', v:'Visual', o:'o' }
+        7PRINT hl:lyellow3:Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
 endfunc
