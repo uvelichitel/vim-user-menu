@@ -680,6 +680,7 @@ command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,e
 
 " Menu command.
 command! Menu call UserMenu_Start("n")
+command! MenuJL call UserMenu_ProvidedKitFuns_JumpSelectionPopup()
 
 " Common highlight definitions.
 hi! um_norm ctermfg=7
