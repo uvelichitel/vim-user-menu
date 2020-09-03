@@ -90,7 +90,7 @@ func! UserMenu_Start(way)
 
     call s:UserMenu_EnsureInit()
 
-    let l:state_to_desc = #{ n:'Normal', c:'Command Line', i:'Insert', v:'Visual', o:'o' }
+    let l:state_to_desc = { 'n':'Normal', 'c':'Command Line', 'i':'Insert', 'v':'Visual', 'o':'o' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
         PRINT 9 User Menu started in l:state_to_desc[s:way] mode.
@@ -201,29 +201,29 @@ func! UserMenu_Start(way)
     hi! PopupSelected ctermfg=17 ctermbg=lightblue
     hi! PmenuSel ctermfg=17 ctermbg=lightblue
 
-    call popup_menu( items, #{ 
-                \ callback: 'UserMenu_MainCallback',
-                \ filter: 'UserMenu_KeyFilter',
-                \ filtermode: "a",
-                \ time: 30000,
-                \ mapping: 0,
-                \ border: [ ],
-                \ fixed: 1,
-                \ wrap: 0,
-                \ maxheight: &lines-8,
-                \ maxwidth: &columns-20,
-                \ flip: 1,
-                \ title: ' VIM User Menu ≈ ' . l:state_to_desc[s:way] . ' ≈ ',
-                \ drag: 1,
-                \ resize: 1,
-                \ close: 'button',
-                \ highlight: 'UMPmenu',
-                \ scrollbar: 1,
-                \ scrollbarhighlight: 'UMPmenuSB',
-                \ thumbhighlight: 'UMPmenuTH',
-                \ cursorline: 1,
-                \ borderhighlight: [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-                \ padding: [ 1, 1, 1, 1 ] } )
+    call popup_menu( items, { 
+                \ 'callback': 'UserMenu_MainCallback',
+                \ 'filter': 'UserMenu_KeyFilter',
+                \ 'filtermode': "a",
+                \ 'time': 30000,
+                \ 'mapping': 0,
+                \ 'border': [ ],
+                \ 'fixed': 1,
+                \ 'wrap': 0,
+                \ 'maxheight': &lines-8,
+                \ 'maxwidth': &columns-20,
+                \ 'flip': 1,
+                \ 'title': ' VIM User Menu ≈ ' . l:state_to_desc[s:way] . ' ≈ ',
+                \ 'drag': 1,
+                \ 'resize': 1,
+                \ 'close': 'button',
+                \ 'highlight': 'UMPmenu',
+                \ 'scrollbar': 1,
+                \ 'scrollbarhighlight': 'UMPmenuSB',
+                \ 'thumbhighlight': 'UMPmenuTH',
+                \ 'cursorline': 1,
+                \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
+                \ 'padding': [ 1, 1, 1, 1 ] } )
     redraw
 
     return ""
@@ -449,7 +449,7 @@ endfunc
 func! s:msgcmdimpl(hl, bang, linenum, ...)
     if(!empty(a:bang))
         call s:UserMenu_DeployDeferred_TimerTriggered_Message(
-                    \ #{ m: (a:hl < 7 ? extend(["[".a:linenum."]"], a:000[0]) : a:000[0]) }, 'm', 1)
+                    \ { 'm': (a:hl < 7 ? extend(["[".a:linenum."]"], a:000[0]) : a:000[0]) }, 'm', 1)
     else
         if exists("a:000[0][1]") && type(a:000[0][1]) == 1 && a:000[0][1] =~ '\v^\[\d+\]$'
             call s:msg(a:hl, a:000[0])
@@ -474,7 +474,7 @@ func! s:deferredMenuReStart(timer)
     endif
     call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
-        let l:state_to_desc = #{ n:'Normal', i:'Insert', v:'Visual', o:'o' }
+        let l:state_to_desc = { 'n':'Normal', i:'Insert', v:'Visual', o:'o' }
         7PRINT hl:lyellow3:Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
@@ -725,57 +725,57 @@ let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save",
 
 let g:user_menu_kit = {
             \ "KIT:buffers" : [ "° BUFFER «LIST» …",
-                    \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
-                            \ opts: [] } ],
-            \ "KIT:jumps" : [ "° JUMP «LIST» …",
-                    \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
-                            \ opts: [] } ],
+                    \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
+                            \ 'opts': [] } ],
+            \ "'KIT':jumps" : [ "° JUMP «LIST» …",
+                    \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
+                            \ 'opts': [] } ],
             \ "KIT:open" : [ "° Open …",
-                        \ #{ type: 'cmds', body: ':Ex', opts: "in-normal",
-                            \ smessage: "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
-                            \ message: "p:1:hl:gold:Explorer started correctly."} ],
+                        \ { 'type': 'cmds', 'body': ':Ex', 'opts': "in-normal",
+                            \ 'smessage': "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
+                            \ 'message': "p:1:hl:gold:Explorer started correctly."} ],
             \ "KIT:save" : [ "° Save current buffer",
-                       \ #{ type: 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
-                            \ smessage:'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
-                                \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
-                                    \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
-                                    \ saved under: " . expand("%")] | endif }
-                                \{g:_m}',
-                            \ opts: "in-normal", message: "p:1:hl:2:{g:_sr}" } ],
+                       \ { 'type': 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
+                            \ 'smessage':'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
+                                \ 'g':_m = "No filename for this buffer." | elseif &ro | let g:_m
+                                    \ = "Readonly buffer." | else | let ['g':_m,g:_sr] = ["","File
+                                    \ saved 'under': " . expand("%")] | endif }
+                                \{'g':_m}',
+                            \ 'opts': "in-normal", 'message': "p:1:hl:2:{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
-                       \ #{ type: 'cmds', body: ':q', smessage: "p:2:hl:2:Quitting Vim
-                           \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
+                       \ { 'type': 'cmds', 'body': ''':q', 'smessage': "'p':'2':'hl':'2':Quitting Vim
+                           \… {'':bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ modified: {&modified}.", opts: "in-normal" } ],
+                               \ 'modified': {&modified}.", 'opts': "in-normal" } ],
             \ "KIT:toggle-vichord-mode" :[ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
-                        \ #{ show-if: "exists('g:vichord_omni_completion_loaded')",
-                            \ type: 'expr', body: 'extend(g:, #{ vichord_search_in_let :
-                            \ !get(g:,"vichord_search_in_let",0) })', opts: "keep-menu-open",
-                            \ message: "p:1:hl:lblue2:The new state: {g:vichord_search_in_let}." } ],
+                        \ { 'show-if': "exists('g:vichord_omni_completion_loaded')",
+                            \ 'type': 'expr', 'body': 'extend(g:, { ''vichord_search_in_let'':
+                            \ !get(g:,"vichord_search_in_let",0) })', 'opts': "keep-menu-open",
+                            \ 'message': "p:1:hl:lblue2:The new state: {g:vichord_search_in_let}." } ],
             \ "KIT:toggle-auto-popmenu" :[ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
-                        \ #{ show-if: "exists('g:apc_loaded')",
-                            \ type: 'cmds', body: 'if get(b:,"apc_enable",0) | ApcDisable |
-                                \ else | ApcEnable | endif', opts: "keep-menu-open",
-                            \ message: "p:1:hl:lblue2:The new state: {b:apc_enable}." } ],
+                        \ { 'show-if': "exists('g:apc_loaded')",
+                            \ 'type': 'cmds', 'body': 'if get(b:,"apc_enable",0) | ApcDisable |
+                                \ else | ApcEnable | endif', 'opts': "keep-menu-open",
+                            \ 'message': "p:1:hl:lblue2:The new state: {b:apc_enable}." } ],
             \ "KIT:new-win" :[ "° New buffer",
-                        \ #{ type: 'norm', body: "\<C-W>n", opts: "in-normal",
-                            \ message: "p:1:New buffer created."} ],
+                        \ { 'type': 'norm', 'body': "\<C-W>n", 'opts': "in-normal",
+                            \ 'message': "p:1:New buffer created."} ],
             \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
-                        \ #{ type: 'keys', body: "y:let @@ = substitute(escape(@@,'/\\'),
-                            \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", opts: "in-visual",
-                            \ message:"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
+                        \ { 'type': 'keys', 'body': "y:let @@ = substitute(escape(@@,'/\\'),
+                            \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", 'opts': "in-visual",
+                            \ 'message':"p:1.5:The selection has been escaped. Here's the s/…/…/g command with 'it':"} ],
             \ "KIT:visual-yank-to-subst-escaped" :[ "° «Visual» yank in s/…/…/g escaped …",
-                        \ #{ type: 'expr', body: "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
-                            \ opts: "in-normal",
-                            \ smessage:"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
+                        \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
+                            \ 'opts': "in-normal",
+                            \ 'smessage':"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
             \ "KIT:capitalize" :[ "° Upcase _front_ letters in the «selected» words",
-                        \ #{ type: 'norm!', body: ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
-                            \ opts: "in-visual",
-                            \ message:"p:1:All selected FRONT letters of WORDS are now upcase."} ],
+                        \ { 'type': 'norm!', 'body': ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
+                            \ 'opts': "in-visual",
+                            \ 'message':"p:1:All selected FRONT letters of WORDS are now upcase."} ],
             \ "KIT:escape-cmd-line" :[ "° Escape the «command-line»",
-                        \ #{ type: 'keys', body: "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
+                        \ { 'type': 'keys', 'body': "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
                                 \'\\n','\\\\n','g')\<CR>",
-                            \ opts: ['in-ex'] } ]
+                            \ 'opts': ['in-ex'] } ]
             \ }
 
 """""""""""""""""" THE END OF THE SCRIPT BODY }}}
@@ -829,27 +829,27 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
     hi! PmenuSel ctermfg=17 ctermbg=82
 
     let s:current_buffer_list = split(execute('filter! /\[Popup\]/ ls!'),"\n")
-    call popup_menu(s:current_buffer_list, #{
-                \ callback:'UserMenu_ProvidedKitFuns_BufferSelectionCallback',
-                \ time: 30000,
-                \ mapping: 0,
-                \ border: [ ],
-                \ fixed: 1,
-                \ wrap: 0,
-                \ maxheight: &lines-4,
-                \ maxwidth: &columns-20,
-                \ flip: 1,
-                \ title: ' VIM User Menu ≈ Select The Buffer To Switch To: ≈ ',
-                \ drag: 1,
-                \ resize: 1,
-                \ close: 'button',
-                \ highlight: 'UMPmenuBL',
-                \ scrollbar: 1,
-                \ scrollbarhighlight: 'UMPmenuBLSB',
-                \ thumbhighlight: 'UMPmenuBLTH',
-                \ cursorline: 1,
-                \ borderhighlight: [ 'um_green4', 'um_green4', 'um_green4', 'um_green4' ],
-                \ padding: [ 2, 2, 2, 2 ] } )
+    call popup_menu(s:current_buffer_list, {
+                \ 'callback':'UserMenu_ProvidedKitFuns_BufferSelectionCallback',
+                \ 'time': 30000,
+                \ 'mapping': 0,
+                \ 'border': [ ],
+                \ 'fixed': 1,
+                \ 'wrap': 0,
+                \ 'maxheight': &lines-4,
+                \ 'maxwidth': &columns-20,
+                \ 'flip': 1,
+                \ 'title': ' VIM User Menu ≈ Select The Buffer To Switch 'To': ≈ ',
+                \ 'drag': 1,
+                \ 'resize': 1,
+                \ 'close': 'button',
+                \ 'highlight': 'UMPmenuBL',
+                \ 'scrollbar': 1,
+                \ 'scrollbarhighlight': 'UMPmenuBLSB',
+                \ 'thumbhighlight': 'UMPmenuBLTH',
+                \ 'cursorline': 1,
+                \ 'borderhighlight': [ 'um_green4', 'um_green4', 'um_green4', 'um_green4' ],
+                \ 'padding': [ 2, 2, 2, 2 ] } )
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
@@ -885,27 +885,27 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     hi! PmenuSel ctermfg=17 ctermbg=82
 
     let s:current_jump_list = split(execute('jumps'),"\n")[1:]
-    call popup_menu(s:current_jump_list, #{
-                \ callback:'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
-                \ time: 30000,
-                \ mapping: 0,
-                \ border: [ ],
-                \ fixed: 1,
-                \ wrap: 0,
-                \ maxheight: &lines-10,
-                \ maxwidth: &columns-20,
-                \ flip: 1,
-                \ title: ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
-                \ drag: 1,
-                \ resize: 0,
-                \ close: 'button',
-                \ highlight: 'UMPmenuJL',
-                \ scrollbar: 1,
-                \ scrollbarhighlight: 'UMPmenuJLSB',
-                \ thumbhighlight: 'UMPmenuJLTH',
-                \ cursorline: 1,
-                \ borderhighlight: [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-                \ padding: [ 2, 2, 2, 2 ] } )
+    call popup_menu(s:current_jump_list, {
+                \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
+                \ 'time': 30000,
+                \ 'mapping': 0,
+                \ 'border': [ ],
+                \ 'fixed': 1,
+                \ 'wrap': 0,
+                \ 'maxheight': &lines-10,
+                \ 'maxwidth': &columns-20,
+                \ 'flip': 1,
+                \ 'title': ' VIM User Menu ≈ Select The Position To Jump 'To': ≈ ',
+                \ 'drag': 1,
+                \ 'resize': 0,
+                \ 'close': 'button',
+                \ 'highlight': 'UMPmenuJL',
+                \ 'scrollbar': 1,
+                \ 'scrollbarhighlight': 'UMPmenuJLSB',
+                \ 'thumbhighlight': 'UMPmenuJLTH',
+                \ 'cursorline': 1,
+                \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
+                \ 'padding': [ 2, 2, 2, 2 ] } )
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
