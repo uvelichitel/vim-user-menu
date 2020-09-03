@@ -2,7 +2,8 @@
 " Copyright (c) 2020 « Sebastian Gniazdowski ».
 " License: « Gnu GPL v3 ».
 " 
-" Example user-menu «list» of «dictionaries»:
+" Example user-menu «list» of «dictionaries» (note: the #{ … } syntax is a
+" Dictionary that allows no quoting on keys — it's unavailable in Neovim):
 " 
 " let g:user_menu = [
 "     \ [ "Reload",      #{ type: "cmds", body: ":edit!" } ],
