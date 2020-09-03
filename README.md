@@ -33,14 +33,16 @@ The feature — ability to edit the command line:
 
 [![asciicast](https://asciinema.org/a/354825.svg)](https://asciinema.org/a/354825)
 
-The two advanced provided functionalities — the buffer- and jump-list popup menus:
+The two advanced provided functionalities — the buffer- and jump-list popup
+menus (available also with the `:MenuBL` and `:MenuJL` commands):
 
 [![asciicast](https://asciinema.org/a/356128.svg)](https://asciinema.org/a/356128)
 
 ## Usage
 
 The default binding is **`<F12>`** — pressing it will open the **default**,
-**example** menu presented in the above Asciicasts.
+**example** menu presented in the above Asciicasts. There's also `:Menu` command
+that does the same.
 
 The default menu consists of multiple provided entries, which are being called
 the "**_menu kit_**". You can reuse the kit's entries when building your own menu,
