@@ -149,6 +149,9 @@ func! UserMenu_Start(way)
         let idx += 1
     endfor
     " … and the temporary (it'll exist till the selection), built effect of it.
+    if ! exists("s:current_menu")
+        let s:current_menu = {}
+    endif
     let s:current_menu[bufnr()] = []
     " The list of items passed to popup_menu()
     let items = []
@@ -202,30 +205,45 @@ func! UserMenu_Start(way)
     hi! PopupSelected ctermfg=17 ctermbg=lightblue
     hi! PmenuSel ctermfg=17 ctermbg=lightblue
 
-    call popup_menu( items, { 
-                \ 'callback': 'UserMenu_MainCallback',
-                \ 'filter': 'UserMenu_KeyFilter',
-                \ 'filtermode': "a",
-                \ 'time': 30000,
-                \ 'mapping': 0,
-                \ 'border': [ ],
-                \ 'fixed': 1,
-                \ 'wrap': 0,
-                \ 'maxheight': &lines-8,
-                \ 'maxwidth': &columns-20,
-                \ 'flip': 1,
-                \ 'title': ' VIM User Menu ≈ ' . l:state_to_desc[s:way] . ' ≈ ',
-                \ 'drag': 1,
-                \ 'resize': 1,
-                \ 'close': 'button',
-                \ 'highlight': 'UMPmenu',
-                \ 'scrollbar': 1,
-                \ 'scrollbarhighlight': 'UMPmenuSB',
-                \ 'thumbhighlight': 'UMPmenuTH',
-                \ 'cursorline': 1,
-                \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-                \ 'padding': [ 1, 1, 1, 1 ] } )
-    redraw
+    let secarg = { 
+        \ 'callback': 'UserMenu_MainCallback',
+        \ 'filter': 'UserMenu_KeyFilter',
+        \ 'filtermode': "a",
+        \ 'time': 30000,
+        \ 'mapping': 0,
+        \ 'border': [ ],
+        \ 'fixed': 1,
+        \ 'wrap': 0,
+        \ 'maxheight': &lines-8,
+        \ 'maxwidth': &columns-20,
+        \ 'flip': 1,
+        \ 'title': ' VIM User Menu ≈ ' . l:state_to_desc[s:way] . ' ≈ ',
+        \ 'drag': 1,
+        \ 'resize': 1,
+        \ 'close': 'button',
+        \ 'highlight': 'UMPmenu',
+        \ 'scrollbar': 1,
+        \ 'scrollbarhighlight': 'UMPmenuSB',
+        \ 'thumbhighlight': 'UMPmenuTH',
+        \ 'cursorline': 1,
+        \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
+        \ 'padding': [ 1, 1, 1, 1 ] }
+
+    if exists('*popup_menu')
+	" Vim
+	call popup_menu(items, secarg)
+    elseif has('nvim') && exists('g:loaded_popup_menu_plugin')
+	" Neovim
+	" g:loaded_popup_menu_plugin is defined by kamykn/popup-menu.nvim.
+	call popup_menu#open(items, secarg)
+    else
+	" Old vim/neovim
+	let index = inputitems(secarg)
+	call UserMenu_MainCallback(index)
+    endif
+ 
+    let s:current_menu[bufnr()] = items 
+  redraw
 
     return ""
 endfunc " }}}
@@ -830,6 +848,7 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
     hi! PmenuSel ctermfg=17 ctermbg=82
 
     let s:current_buffer_list = split(execute('filter! /\[Popup\]/ ls!'),"\n")
+
     call popup_menu(s:current_buffer_list, {
                 \ 'callback':'UserMenu_ProvidedKitFuns_BufferSelectionCallback',
                 \ 'time': 30000,
