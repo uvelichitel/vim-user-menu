@@ -728,7 +728,7 @@ let g:user_menu_kit = {
             \ "KIT:buffers" : [ "° BUFFER «LIST» …",
                     \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
                             \ 'opts': [] } ],
-            \ "'KIT':jumps" : [ "° JUMP «LIST» …",
+            \ "KIT:jumps" : [ "° JUMP «LIST» …",
                     \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
                             \ 'opts': [] } ],
             \ "KIT:open" : [ "° Open …",
@@ -736,12 +736,12 @@ let g:user_menu_kit = {
                             \ 'smessage': "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
                             \ 'message': "p:1:hl:gold:Explorer started correctly."} ],
             \ "KIT:save" : [ "° Save current buffer",
-                       \ { 'type': 'cmds', body: ':if !empty(expand("%")) && !&ro | w | endif',
+                       \ { 'type': 'cmds', 'body': ':if !empty(expand("%")) && !&ro | w | endif',
                             \ 'smessage':'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
-                                \ 'g':_m = "No filename for this buffer." | elseif &ro | let g:_m
-                                    \ = "Readonly buffer." | else | let ['g':_m,g:_sr] = ["","File
-                                    \ saved 'under': " . expand("%")] | endif }
-                                \{'g':_m}',
+                                \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
+                                    \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
+                                    \ saved under: " . expand("%")] | endif }
+                                \{g:_m}',
                             \ 'opts': "in-normal", 'message': "p:1:hl:2:{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
                        \ { 'type': 'cmds', 'body': ''':q', 'smessage': "'p':'2':'hl':'2':Quitting Vim
