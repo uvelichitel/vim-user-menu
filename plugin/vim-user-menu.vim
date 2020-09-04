@@ -429,7 +429,7 @@ func! s:msg(hl, ...)
     
         if start_idx == -1
             " A variable?
-            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=\s*$'
+            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
                 let arg = s:UserMenu_ExpandVars("{".arg."}")
             " A function call or an expression wrapped in parens?
             elseif arg =~# '\v^\s*(([sgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
@@ -577,13 +577,20 @@ func! s:UserMenu_ExpandVars(text_or_texts)
         let texts=deepcopy(a:text_or_texts)
         let idx = 0
         for t in texts
-            let texts[idx] = substitute(t, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+            let texts[idx] = substitute(t, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_]
+                        \[a-zA-Z0-9._]*%(\[[^]]+\])=))\}',
+                        \ '\=((submatch(1)[0] == ":") ?
+                        \ ((submatch(1)[1] == ":") ?
+                        \ execute(submatch(1))[1:] :
+                            \ execute(submatch(1))[1:0]) :
+                                \ (exists(submatch(1)) ?
+                                \ eval("extend(g:,{submatch(1):submatch(1)})") : submatch(1)))', 'g')
             let idx += 1
         endfor
         return texts
     else
         " String input.
-        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9_]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
     endif
 endfunc
 " }}}
