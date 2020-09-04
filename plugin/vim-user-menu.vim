@@ -1061,17 +1061,28 @@ func! UserMenu_JLKeyFilter(id,key)
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
         let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
 
-        " The matched :jumps-string looks like a buffer's text?
-        if empty(s:mres[2]) ? (s:last_pedit_file != expand('%')) :
+        2PRINT \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2] /// % ↔ expand('%')
+        " The matched :jumps-string looks like a (typical) buffer's text?
+        " If yes, then compare % for the file-name change, otherwise compare
+        " the matched string ↔ a file name.
+        let readable = !(empty(s:mres[2]) || !filereadable(expand(fnameescape(s:mres[2]))))
+        if (!readable) ?
+                    \ (s:last_pedit_file != expand('%')) :
                     \ (s:last_pedit_file != s:mres[2])
-            let s:last_pedit_file = s:mres[2]
-            if empty(s:mres[2]) || s:mres[2] =~ "[[:space:]'\"(){}\\][]"
+            let s:last_pedit_file = !readable ? expand("%") : s:mres[2]
+            "let optbkp = &foldenable
+            "set nofoldenable
+            if !readable
+                3PRINT Expanding % expand('%') // s:mres[2]
                 if !empty(expand("%"))
                     exe "pedit" "%"
                 endif
             else
+                3PRINT Editing NEW with: pedit → s:mres[2]
                 exe "pedit" s:mres[2]
             endif
+        else
+            4PRINT ≈≈ UNCHANGED ≈≈
         endif
         let pid = popup_findpreview()
         if pid
