@@ -507,6 +507,15 @@ func! s:deferredMessageShow(timer)
     redraw
 endfunc
 " }}}
+" FUNCTION: s:closePreviewPopup(timer) {{{
+func! s:closePreviewPopup(timer)
+    call filter( s:timers, 'v:val != a:timer' )
+    let pid = popup_findpreview()
+    if pid
+        call popup_close(pid)
+    endif
+endfunc
+" }}}
 " FUNCTION: s:UserMenu_DoPause(pause_value) {{{
 func! s:UserMenu_DoPause(pause_value)
     if a:pause_value =~ '\v^-=\d+(\.\d+)=$'
@@ -952,6 +961,7 @@ endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
 func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
+    call add( s:timers, timer_start(1000, function("s:closePreviewPopup")) )
     " Selected or cancelled?
     let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
     if s:result > 0 && s:result <= len(s:current_jump_list)
