@@ -1014,23 +1014,47 @@ func! UserMenu_JLKeyFilter(id,key)
     " Quick fetch/establish of the to-use variable…:
     if s:jl_to_use == -13371337
         let s:jl_to_use = popup_getpos(s:jlpid)['core_height']
+        " Initialize also this constant – the size of the list.
+        let s:jl_list_height = s:jl_to_use 
     endif
 
+    let s:popdata = popup_getpos(s:jlpid)
+    2PRINT → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
+                \ →→→ 1st-line: (!empty(s:popdata) ? s:popdata.firstline : -1) ←←←
     let s:result = popup_filter_menu(a:id, s:key)
-    let s:jl_to_use -= changed
-    let popdata = popup_getpos(s:jlpid)
-
-    if changed && 
-                \ (s:jl_to_use <= 0) &&
-                \ s:last_jl_first_line == popdata.firstline
-        " An improper situation (Vim bug): we've moved through enough
-        " (s:jl_to_use) items for a scroll to occur, but it doesn't happen
-        " (↔ the getpos-field: 'firstline' — remains unchanged).
-        let s:last_jl_first_line = popdata.firstline
-        let changed = 0
-    else
-        let s:last_jl_first_line = has_key(popdata,'firstline') ? popdata.firstline : 1
+    if changed > 0 && s:jl_to_use > 0
+        let s:jl_to_use -= changed
+    elseif changed < 0 && s:jl_to_use < s:jl_list_height
+        let s:jl_to_use -= changed
+    elseif (changed > 0 && s:jl_to_use <= 0) ||
+                \ (changed < 0 && s:jl_to_use >= s:jl_list_height)
+        " An improper situation (Vim bug, especially in case of a :redraw call
+        " — that's now avoided): we've moved through enough items for a scroll
+        " to occur, but it doesn't happen (↔ the getpos-field: 'firstline' —
+        " remains unchanged).
+        " 
+        " A +1 is needed for the 1 based 'firstline' index, as shown below (the
+        " arrows denote the viewport of the list — it's scrolled to the bottom;
+        " as it can be seen, 'firstline' will be '2' in such case, so +1 is
+        " needed to the total_len-list_height subtraction…
+        "    1
+        "    2 <--|
+        "    3 <--/
+        " 
+        " The improper situation is only when the list isn't scrolled to any
+        " boundary, i.e.: f.line > 1 and f.line < tot.l. - l.heig. + 1.
+        if s:last_jl_first_line == s:popdata.firstline && 
+                    \ (s:popdata.firstline > 1 && s:popdata.firstline <
+                    \ (len(s:current_jump_list) - s:jl_list_height + 1))
+            " Withdrawal the index change:
+            let s:current_jump_list_idx += changed
+            " Deactivate the preview popup:
+            let changed = 0
+        endif
     endif
+
+    let s:last_jl_first_line = !empty(s:popdata) ? s:popdata.firstline : 1
+
     if changed
         " Match the final column(s) of the :jumps listing…
         let s:item = s:current_jump_list[s:current_jump_list_idx]
