@@ -490,7 +490,7 @@ func! s:deferredMenuReStart(timer)
     endif
     call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
-        let l:state_to_desc = { 'n':'Normal', i:'Insert', v:'Visual', o:'o' }
+        let l:state_to_desc = { 'n':'Normal', 'i':'Insert', 'v':'Visual', 'o':'o' }
         7PRINT hl:lyellow3:Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
@@ -757,10 +757,10 @@ let g:user_menu_kit = {
                                 \{g:_m}',
                             \ 'opts': "in-normal", 'message': "p:1:hl:2:{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
-                       \ { 'type': 'cmds', 'body': ''':q', 'smessage': "'p':'2':'hl':'2':Quitting Vim
-                           \… {'':bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
+                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2:hl:2:Quitting Vim
+                           \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ 'modified': {&modified}.", 'opts': "in-normal" } ],
+                               \ modified: {&modified}.", 'opts': "in-normal" } ],
             \ "KIT:toggle-vichord-mode" :[ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ { 'show-if': "exists('g:vichord_omni_completion_loaded')",
                             \ 'type': 'expr', 'body': 'extend(g:, { ''vichord_search_in_let'':
@@ -777,7 +777,7 @@ let g:user_menu_kit = {
             \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
                         \ { 'type': 'keys', 'body': "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", 'opts': "in-visual",
-                            \ 'message':"p:1.5:The selection has been escaped. Here's the s/…/…/g command with 'it':"} ],
+                            \ 'message':"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
             \ "KIT:visual-yank-to-subst-escaped" :[ "° «Visual» yank in s/…/…/g escaped …",
                         \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
                             \ 'opts': "in-normal",
