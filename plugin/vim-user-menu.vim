@@ -922,20 +922,20 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     let s:current_jump_list = split(substitute(execute('jumps'),'  \(\d\)',' \1','g'),"\n")[1:]
     let s:current_jump_list_idx = 0
     if &columns/2 >= 40
-        let line=5
-        let col=3
-        let maxwidth=(&columns/2-10)
-        let maxheight=&lines-15
+        let s:jl_line=5
+        let s:jl_col=3
+        let s:jl_maxwidth=(&columns/2-10)
+        let s:jl_maxheight=&lines-15
     else
-        let line=2
-        let col=1
-        let maxwidth=max([&columns-35,20])
-        let maxheight=&lines-7
+        let s:jl_line=2
+        let s:jl_col=1
+        let s:jl_maxwidth=max([&columns-35,20])
+        let s:jl_maxheight=&lines-7
     endif
     let s:jlpid = popup_menu(s:current_jump_list, {
                 \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
-                \ 'line': line,
-                \ 'col': col,
+                \ 'line': s:jl_line,
+                \ 'col': s:jl_col,
                 \ 'pos': 'topleft',
                 \ 'filter': 'UserMenu_JLKeyFilter',
                 \ 'time': 300000,
@@ -943,8 +943,8 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
                 \ 'border': [ ],
                 \ 'fixed': 1,
                 \ 'wrap': 0,
-                \ 'maxheight': maxheight,
-                \ 'maxwidth': maxwidth,
+                \ 'maxheight': s:jl_maxheight,
+                \ 'maxwidth': s:jl_maxwidth,
                 \ 'flip': 0,
                 \ 'title': ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
                 \ 'drag': 1,
@@ -1109,7 +1109,8 @@ func! UserMenu_JLKeyFilter(id,key)
         let pid = popup_findpreview()
         if pid
             let ret = popup_setoptions(pid, {'firstline' : s:mres[1]})
-            call popup_move( pid, { 'line':5, 'col': (&columns/2+3) } )
+            call popup_move( pid, { 'line':s:jl_line, 'col': (s:jl_maxwidth+9),
+                        \ 'maxheight':&lines/2, 'maxwidth':&columns/2-10 } )
             call win_execute( pid, 'norm! zR' )
         endif
     endif
