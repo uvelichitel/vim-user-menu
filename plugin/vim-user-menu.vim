@@ -1031,7 +1031,8 @@ func! UserMenu_JLKeyFilter(id,key)
         let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
 
         " The matched :jumps-string looks like a buffer's text?
-        if s:last_pedit_file != s:mres[2]
+        if empty(s:mres[2]) ? (s:last_pedit_file != expand('%')) :
+                    \ (s:last_pedit_file != s:mres[2])
             let s:last_pedit_file = s:mres[2]
             if empty(s:mres[2]) || s:mres[2] =~ "[[:space:]'\"(){}\\][]"
                 if !empty(expand("%"))
