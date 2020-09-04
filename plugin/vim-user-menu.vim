@@ -243,7 +243,6 @@ func! UserMenu_Start(way)
 	call UserMenu_MainCallback(index)
     endif
  
-    let s:current_menu[bufnr()] = items 
     redraw
 
     return ""
@@ -860,7 +859,7 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
                 \ 'maxheight': &lines-4,
                 \ 'maxwidth': &columns-20,
                 \ 'flip': 1,
-                \ 'title': ' VIM User Menu ≈ Select The Buffer To Switch 'To': ≈ ',
+                \ 'title': ' VIM User Menu ≈ Select The Buffer To Switch To: ≈ ',
                 \ 'drag': 1,
                 \ 'resize': 1,
                 \ 'close': 'button',
@@ -916,7 +915,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
                 \ 'maxheight': &lines-10,
                 \ 'maxwidth': &columns-20,
                 \ 'flip': 1,
-                \ 'title': ' VIM User Menu ≈ Select The Position To Jump 'To': ≈ ',
+                \ 'title': ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
                 \ 'drag': 1,
                 \ 'resize': 0,
                 \ 'close': 'button',
