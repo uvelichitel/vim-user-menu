@@ -454,7 +454,6 @@ func! s:msg(hl, ...)
     let hl = !empty(val) ? (val =~# '^\d\+$' ? c[val] : val) : c[hl]
     let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
     exe 'echohl ' . hl
-    redraw
     let [s:pause,s:msg] = s:UserMenu_GetPrefixValue('p%[ause]', join(args) )
     echom s:msg 
     echohl None 
