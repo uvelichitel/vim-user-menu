@@ -205,7 +205,7 @@ func! UserMenu_Start(way)
     hi! PopupSelected ctermfg=17 ctermbg=lightblue
     hi! PmenuSel ctermfg=17 ctermbg=lightblue
 
-    let secarg = { 
+    let secarg = {
         \ 'callback': 'UserMenu_MainCallback',
         \ 'filter': 'UserMenu_KeyFilter',
         \ 'filtermode': "a",
@@ -232,13 +232,14 @@ func! UserMenu_Start(way)
     if exists('*popup_menu')
 	" Vim
 	call popup_menu(items, secarg)
+    " The plugin currently is unable to render the popup, so… no NeoVim.
     elseif has('nvim') && exists('g:loaded_popup_menu_plugin')
 	" Neovim
 	" g:loaded_popup_menu_plugin is defined by kamykn/popup-menu.nvim.
 	call popup_menu#open(items, secarg)
     else
 	" Old vim/neovim
-	let index = inputitems(secarg)
+	let index = inputitems(items)
 	call UserMenu_MainCallback(index)
     endif
  
