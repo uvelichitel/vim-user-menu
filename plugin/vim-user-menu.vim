@@ -380,7 +380,6 @@ func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
             call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 20, function("s:deferredMessageShow")))
             let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
-            let s:msg = s:UserMenu_ExpandVars(s:msg)
             if type(s:msg) == 3 || !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
                 if type(s:msg) == 3
                     call s:msg(10, s:msg)
@@ -408,7 +407,8 @@ func! s:msg(hl, ...)
 
     " Make a copy of the input.
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
-    if a:hl >= 7 && args[0] =~ '\v^\[\d+\]$' | let args = args[1:] | endif
+    " Strip the line-number argumen for the user- (count>=7) messages.
+    if a:hl >= 7 && args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
     let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
@@ -432,12 +432,15 @@ func! s:msg(hl, ...)
         endif
     
         if start_idx == -1
-            " A variable?
+            " Compensate for explicit variable-expansion requests or {:ex commands…}, etc.
+            let arg = s:UserMenu_ExpandVars(arg)
+
             if type(arg) == v:t_string 
-                if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
+                " A variable?
+                if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
                     let arg = s:UserMenu_ExpandVars("{".arg."}")
                 " A function call or an expression wrapped in parens?
-                elseif arg =~# '\v^\s*(([sgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
+                elseif arg =~# '\v^\s*(([svgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
                     let arg = eval(arg)
                 " A \-quoted atom?
                 elseif arg[0] == '\'
@@ -505,9 +508,9 @@ endfunc
 func! s:deferredMessageShow(timer)
     call filter( s:timers, 'v:val != a:timer' )
     if type(s:msgs[s:msg_idx]) == 3
-        call s:msg(10,s:UserMenu_ExpandVars(s:msgs[s:msg_idx]))
+        call s:msg(10,s:msgs[s:msg_idx])
     else
-        10PRINT s:UserMenu_ExpandVars(s:msgs[s:msg_idx])
+        10PRINT s:msgs[s:msg_idx]
     endif
     let s:msg_idx += 1
     redraw
@@ -592,7 +595,7 @@ func! s:UserMenu_ExpandVars(text_or_texts)
         let texts=deepcopy(a:text_or_texts)
         let idx = 0
         for t in texts
-            let texts[idx] = substitute(t, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_]
+            let texts[idx] = substitute(t, '\v\{((:[^}]+|([svgb]\:|\&)[a-zA-Z_]
                         \[a-zA-Z0-9._]*%(\[[^]]+\])=))\}',
                         \ '\=((submatch(1)[0] == ":") ?
                         \ ((submatch(1)[1] == ":") ?
@@ -605,7 +608,7 @@ func! s:UserMenu_ExpandVars(text_or_texts)
         return texts
     else
         " String input.
-        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_]
+        return substitute(a:text_or_texts, '\v\{((:[^}]+|([svgb]\:|\&)[a-zA-Z_]
                         \[a-zA-Z0-9._]*%(\[[^]]+\])=))\}',
                         \ '\=((submatch(1)[0] == ":") ?
                         \ ((submatch(1)[1] == ":") ?
