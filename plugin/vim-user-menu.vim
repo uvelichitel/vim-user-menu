@@ -739,6 +739,7 @@ let s:state_restarting = 0
 let s:last_pedit_file = ""
 let s:last_jl_first_line = 0
 let s:timers = []
+let s:jl_skip_count = 0
 
 " The default, provided menu.
 let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save", 
@@ -1007,8 +1008,10 @@ func! UserMenu_JLKeyFilter(id,key)
         let changed = 1
     elseif execute(['let i=index(["\<C-U>","g"],s:key)','echon i']) >= 0
         call feedkeys("kkkkkkk" . (i ? "kkkkkkkkkkkkkkkkkkkkkkkkkkkk" : ""),"n")
+        let s:jl_skip_count = 1 + 7 + (i ? 28 : 0)
     elseif execute(['let i=index(["\<C-D>","G"],s:key)','echon i']) >= 0
         call feedkeys("jjjjjjj" . (i ? "jjjjjjjjjjjjjjjjjjjjjjjjjjjj" : ""),"n")
+        let s:jl_skip_count = 1 + 7 + (i ? 28 : 0)
     endif
 
     " Quick fetch/establish of the to-use variable…:
@@ -1046,16 +1049,25 @@ func! UserMenu_JLKeyFilter(id,key)
         if s:last_jl_first_line == s:popdata.firstline && 
                     \ (s:popdata.firstline > 1 && s:popdata.firstline <
                     \ (len(s:current_jump_list) - s:jl_list_height + 1))
+            1PRINT SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
+                        \ 'fl'→ s:popdata.firstline °°
+                        \ \s:current_jump_list_idx ↔ s:current_jump_list_idx °°
+                        \ \changed ↔ l:changed °° \len(s:current_jump_list)
+                        \ len(s:current_jump_list)
+                        \ °° RECENT 'fl' ↔ (popup_getpos(s:jlpid)['firstline'])
             " Withdrawal the index change:
-            let s:current_jump_list_idx += changed
+            " Commented out, as another Vim bug overlays on the previous one:
+            " lack of update of 'firstline' after a successful scroll up.
+            "let s:current_jump_list_idx -= changed
             " Deactivate the preview popup:
-            let changed = 0
+            "let changed = 0
         endif
     endif
 
     let s:last_jl_first_line = !empty(s:popdata) ? s:popdata.firstline : 1
 
-    if changed
+    let s:jl_skip_count -= s:jl_skip_count > 0 ? 1 : 0 
+    if changed && s:jl_skip_count <= 0
         " Match the final column(s) of the :jumps listing…
         let s:item = s:current_jump_list[s:current_jump_list_idx]
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
