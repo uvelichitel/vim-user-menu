@@ -681,6 +681,7 @@ augroup UserMenu_InitGroup
     au BufRead * call s:UserMenu_InitBufRead()
 augroup END
 
+exe "set previewpopup=height:".(&lines/2).",width:".(&columns/2-10)
 inoremap <expr> <F12> UserMenu_Start("i")
 nnoremap <expr> <F12> UserMenu_Start("n")
 vnoremap <expr> <F12> UserMenu_Start("v")
@@ -729,6 +730,7 @@ hi! um_lbgreen3 ctermfg=154 cterm=bold
 " Session-variables initialization.
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
+let s:last_pedit_file = ""
 let s:timers = []
 
 " The default, provided menu.
@@ -900,16 +902,21 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     hi! PmenuSel ctermfg=17 ctermbg=82
 
     let s:current_jump_list = split(execute('jumps'),"\n")[1:]
+    let s:current_jump_list_idx = 0
     call popup_menu(s:current_jump_list, {
                 \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
-                \ 'time': 30000,
+                \ 'line': 5,
+                \ 'col': 3,
+                \ 'pos': 'topleft',
+                \ 'filter': 'UserMenu_JLKeyFilter',
+                \ 'time': 300000,
                 \ 'mapping': 0,
                 \ 'border': [ ],
                 \ 'fixed': 1,
                 \ 'wrap': 0,
-                \ 'maxheight': &lines-10,
-                \ 'maxwidth': &columns-20,
-                \ 'flip': 1,
+                \ 'maxheight': &lines-15,
+                \ 'maxwidth': (&columns/2 > 30 ? (&columns/2-15) : &columns-10),
+                \ 'flip': 0,
                 \ 'title': ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
                 \ 'drag': 1,
                 \ 'resize': 0,
@@ -960,6 +967,62 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     endif
 endfunc
 " }}}
+" FUNCTION: UserMenu_JLKeyFilter() {{{
+func! UserMenu_JLKeyFilter(id,key)
+    redraw
+    let s:key = a:key
+
+    " Redraw timer if from command line.
+    if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
+
+    " Handle the keys.
+    let changed = 0
+    if execute(['let i=index(["k","\<Up>","\<C-E>","\<C-P>"], s:key)', 'echon i']) >= 0
+        let s:current_jump_list_idx = s:current_jump_list_idx <= 0 ?
+                    \ 0 : s:current_jump_list_idx-1
+        let changed = 1
+    elseif execute(['let i=index(["j","\<Down>","\<C-Y>","\<C-N>"], s:key)', 'echon i']) >= 0
+        let s:current_jump_list_idx = s:current_jump_list_idx >=
+                    \ (len(s:current_jump_list)-1) ?
+                    \ (len(s:current_jump_list)-1) : s:current_jump_list_idx+1
+        let changed = 1
+    elseif execute(['let i=index(["\<C-U>","g"],s:key)','echon i']) >= 0
+        call feedkeys("kkkkkkk" . (i ? "kkkkkkkkkkkkkkkkkkkkkkkkkkkk" : ""),"n")
+    elseif execute(['let i=index(["\<C-D>","G"],s:key)','echon i']) >= 0
+        call feedkeys("jjjjjjj" . (i ? "jjjjjjjjjjjjjjjjjjjjjjjjjjjj" : ""),"n")
+    endif
+
+    if changed == 1
+        " Match the final column(s) of the :jumps listing…
+        let s:item = s:current_jump_list[s:current_jump_list_idx]
+        let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
+        let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
+
+        " The matched :jumps-string looks like a buffer's text?
+        if s:last_pedit_file != s:mres[2]
+            let s:last_pedit_file = s:mres[2]
+            let optbkp = &foldenable
+            set nofoldenable
+            if empty(s:mres[2]) || s:mres[2] =~ "[[:space:]'\"(){}]"
+                exe "pedit" "%"
+            else
+                exe "pedit" s:mres[2]
+            endif
+            if optbkp
+                set foldenable
+            endif
+        endif
+        let pid = popup_findpreview()
+        if pid
+            echom "pid" pid
+            let ret = popup_setoptions(pid, {'firstline' : s:mres[1]})
+        endif
+        call popup_move( pid, { 'line':5, 'col': (&columns/2+3) } )
+    endif
+
+    let s:result = popup_filter_menu(a:id, s:key)
+    return s:result
+endfunc " }}}
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
 
