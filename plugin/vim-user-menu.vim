@@ -350,7 +350,6 @@ endfunc
 
 " FUNCTION: UserMenu_KeyFilter() {{{
 func! UserMenu_KeyFilter(id,key)
-    redraw
     let s:tryb = s:UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
     if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
@@ -366,7 +365,6 @@ func! UserMenu_KeyFilter(id,key)
         let s:result = popup_filter_menu(a:id, a:key)
         3PRINT s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
                     \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
-        redraw
         return s:result
     endif
 endfunc " }}}
