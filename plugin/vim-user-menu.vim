@@ -372,13 +372,11 @@ endfunc " }}}
 func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
-        let [s:pauses, s:pause_idx] = [ exists("s:pauses") ? s:pauses : [], exists("s:pause_idx") ? s:pause_idx : 0 ]
     endif
     if has_key(a:dict,a:key) 
-        let [s:pause,s:msg] = s:UserMenu_GetPrefixValue('p%[ause]', a:dict[a:key])
+        let s:msg = a:dict[a:key]
         if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
-            call add(s:pauses, s:pause)
             call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 20, function("s:deferredMessageShow")))
             let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
@@ -390,7 +388,6 @@ func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
                     10PRINT s:msg
                 endif
                 redraw
-                call s:UserMenu_DoPause(s:pause)
             endif
         endif
     endif
@@ -458,8 +455,10 @@ func! s:msg(hl, ...)
     let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
     exe 'echohl ' . hl
     redraw
-    echom join( args )
+    let [s:pause,s:msg] = s:UserMenu_GetPrefixValue('p%[ause]', join(args) )
+    echom s:msg 
     echohl None 
+    call s:UserMenu_DoPause(s:pause)
 endfunc
 " }}}
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
@@ -505,10 +504,8 @@ func! s:deferredMessageShow(timer)
     else
         10PRINT s:UserMenu_ExpandVars(s:msgs[s:msg_idx])
     endif
-    let pause = s:pauses[s:pause_idx]
-    let [s:msg_idx, s:pause_idx] = [s:msg_idx+1, s:pause_idx+1]
+    let s:msg_idx += 1
     redraw
-    call s:UserMenu_DoPause(pause)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_DoPause(pause_value) {{{
