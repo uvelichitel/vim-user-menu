@@ -902,6 +902,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     hi! PmenuSel ctermfg=17 ctermbg=82
 
     let s:jl_to_use = -13371337
+    let s:current_jump_list = split(substitute(execute('jumps'),'  \(\d\)',' \1','g'),"\n")[1:]
     let s:current_jump_list_idx = 0
     if &columns/2 >= 40
         let line=5
