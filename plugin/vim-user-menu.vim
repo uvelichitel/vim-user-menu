@@ -418,25 +418,31 @@ func! s:msg(hl, ...)
         let arg = args[idx]
         " Unclosed paren?
         " Discriminate two special cases: (func() and (func(sub_func())
-        if start_idx == -1 && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
-            let start_idx = idx
+        if start_idx == -1
+            if type(arg) == v:t_string && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
+                let start_idx = idx
+            endif
         " A free, closing paren?
-        elseif start_idx >= 0 && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
-            call add(new_args,eval(join(args[start_idx:idx])))
-            let start_idx = -1
-            continue
+        elseif start_idx >= 0
+            if type(arg) == v:t_string && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
+                call add(new_args,eval(join(args[start_idx:idx])))
+                let start_idx = -1
+                continue
+            endif
         endif
     
         if start_idx == -1
             " A variable?
-            if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
-                let arg = s:UserMenu_ExpandVars("{".arg."}")
-            " A function call or an expression wrapped in parens?
-            elseif arg =~# '\v^\s*(([sgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
-                let arg = eval(arg)
-            " A \-quoted atom?
-            elseif arg[0] == '\'
-                let arg = arg[1:]
+            if type(arg) == v:t_string 
+                if arg =~# '\v^\s*[sgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
+                    let arg = s:UserMenu_ExpandVars("{".arg."}")
+                " A function call or an expression wrapped in parens?
+                elseif arg =~# '\v^\s*(([sgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
+                    let arg = eval(arg)
+                " A \-quoted atom?
+                elseif arg[0] == '\'
+                    let arg = arg[1:]
+                endif
             endif
 
             " Store/save the element.
@@ -581,7 +587,7 @@ endfunc
 " FUNCTION: s:UserMenu_ExpandVars {{{
 " It expands all {:command …'s} and {[sgb]:user_variable's}.
 func! s:UserMenu_ExpandVars(text_or_texts)
-    if type(a:text_or_texts) == 3
+    if type(a:text_or_texts) == v:t_list
         " List input.
         let texts=deepcopy(a:text_or_texts)
         let idx = 0
@@ -593,13 +599,20 @@ func! s:UserMenu_ExpandVars(text_or_texts)
                         \ execute(submatch(1))[1:] :
                             \ execute(submatch(1))[1:0]) :
                                 \ (exists(submatch(1)) ?
-                                \ eval("extend(g:,{submatch(1):submatch(1)})") : submatch(1)))', 'g')
+                                \ eval(submatch(1)) : submatch(1)))', 'g')
             let idx += 1
         endfor
         return texts
     else
         " String input.
-        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=))\}', '\=((submatch(1)[0] == ":") ? ((submatch(1)[1] == ":") ? execute(submatch(1))[1:] : execute(submatch(1))[1:0]) : (exists(submatch(1)) ? eval(submatch(1)) : submatch(1)))', 'g')
+        return substitute(a:text_or_texts, '\v\{((:[^}]+|([sgb]\:|\&)[a-zA-Z_]
+                        \[a-zA-Z0-9._]*%(\[[^]]+\])=))\}',
+                        \ '\=((submatch(1)[0] == ":") ?
+                        \ ((submatch(1)[1] == ":") ?
+                        \ execute(submatch(1))[1:] :
+                            \ execute(submatch(1))[1:0]) :
+                                \ (exists(submatch(1)) ?
+                                \ eval(submatch(1)) : submatch(1)))', 'g')
     endif
 endfunc
 " }}}
