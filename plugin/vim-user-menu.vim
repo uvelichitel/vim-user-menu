@@ -932,6 +932,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
         let s:jl_maxwidth=max([&columns-35,20])
         let s:jl_maxheight=&lines-7
     endif
+    let s:last_pedit_file = ""
     let s:jlpid = popup_menu(s:current_jump_list, {
                 \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
                 \ 'line': s:jl_line,
