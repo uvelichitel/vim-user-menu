@@ -718,8 +718,8 @@ cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
 onoremap <expr> <F12> UserMenu_Start("o")
 
 " Print command.
-command! -nargs=+ -count=4 -bang -bar PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
-           \ map([<f-args>], 'v:val =~ ''\v^[sbgla]:[a-zA-Z0-9_]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
+command! -nargs=+ -count=4 -bang -bar -complete=var PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
+           \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
 " Menu command.
 command! Menu call UserMenu_Start("n")
@@ -1015,9 +1015,6 @@ endfunc
 func! UserMenu_JLKeyFilter(id,key)
     redraw
     let s:key = a:key
-
-    " Redraw timer if from command line.
-    if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
 
     " Handle the keys.
     let changed = 0
