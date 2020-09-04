@@ -244,7 +244,7 @@ func! UserMenu_Start(way)
     endif
  
     let s:current_menu[bufnr()] = items 
-  redraw
+    redraw
 
     return ""
 endfunc " }}}
