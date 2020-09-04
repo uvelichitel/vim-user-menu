@@ -730,6 +730,7 @@ hi! um_lbgreen3 ctermfg=154 cterm=bold
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
 let s:last_pedit_file = ""
+let s:last_jl_first_line = 0
 let s:timers = []
 
 " The default, provided menu.
@@ -900,12 +901,23 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     hi! PopupSelected ctermfg=17 ctermbg=82
     hi! PmenuSel ctermfg=17 ctermbg=82
 
-    let s:current_jump_list = split(execute('jumps'),"\n")[1:]
+    let s:jl_to_use = -13371337
     let s:current_jump_list_idx = 0
-    call popup_menu(s:current_jump_list, {
+    if &columns/2 >= 40
+        let line=5
+        let col=3
+        let maxwidth=(&columns/2-10)
+        let maxheight=&lines-15
+    else
+        let line=2
+        let col=1
+        let maxwidth=max([&columns-35,20])
+        let maxheight=&lines-7
+    endif
+    let s:jlpid = popup_menu(s:current_jump_list, {
                 \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
-                \ 'line': 5,
-                \ 'col': 3,
+                \ 'line': line,
+                \ 'col': col,
                 \ 'pos': 'topleft',
                 \ 'filter': 'UserMenu_JLKeyFilter',
                 \ 'time': 300000,
@@ -913,8 +925,8 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
                 \ 'border': [ ],
                 \ 'fixed': 1,
                 \ 'wrap': 0,
-                \ 'maxheight': &lines-15,
-                \ 'maxwidth': (&columns/2 > 30 ? (&columns/2-15) : &columns-10),
+                \ 'maxheight': maxheight,
+                \ 'maxwidth': maxwidth,
                 \ 'flip': 0,
                 \ 'title': ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
                 \ 'drag': 1,
@@ -926,7 +938,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
                 \ 'thumbhighlight': 'UMPmenuJLTH',
                 \ 'cursorline': 1,
                 \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-                \ 'padding': [ 2, 2, 2, 2 ] } )
+                \ 'padding': (&columns < 80 ? [1,1,1,1]:[2,2,2,2])})
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
@@ -979,7 +991,7 @@ func! UserMenu_JLKeyFilter(id,key)
     if execute(['let i=index(["k","\<Up>","\<C-E>","\<C-P>"], s:key)', 'echon i']) >= 0
         let s:current_jump_list_idx = s:current_jump_list_idx <= 0 ?
                     \ 0 : s:current_jump_list_idx-1
-        let changed = 1
+        let changed = -1
     elseif execute(['let i=index(["j","\<Down>","\<C-Y>","\<C-N>"], s:key)', 'echon i']) >= 0
         let s:current_jump_list_idx = s:current_jump_list_idx >=
                     \ (len(s:current_jump_list)-1) ?
@@ -991,7 +1003,27 @@ func! UserMenu_JLKeyFilter(id,key)
         call feedkeys("jjjjjjj" . (i ? "jjjjjjjjjjjjjjjjjjjjjjjjjjjj" : ""),"n")
     endif
 
-    if changed == 1
+    " Quick fetch/establish of the to-use variable…:
+    if s:jl_to_use == -13371337
+        let s:jl_to_use = popup_getpos(s:jlpid)['core_height']
+    endif
+
+    let s:result = popup_filter_menu(a:id, s:key)
+    let s:jl_to_use -= changed
+    let popdata = popup_getpos(s:jlpid)
+
+    if changed && 
+                \ (s:jl_to_use <= 0) &&
+                \ s:last_jl_first_line == popdata.firstline
+        " An improper situation (Vim bug): we've moved through enough
+        " (s:jl_to_use) items for a scroll to occur, but it doesn't happen
+        " (↔ the getpos-field: 'firstline' — remains unchanged).
+        let s:last_jl_first_line = popdata.firstline
+        let changed = 0
+    else
+        let s:last_jl_first_line = has_key(popdata,'firstline') ? popdata.firstline : 1
+    endif
+    if changed
         " Match the final column(s) of the :jumps listing…
         let s:item = s:current_jump_list[s:current_jump_list_idx]
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
@@ -1000,26 +1032,22 @@ func! UserMenu_JLKeyFilter(id,key)
         " The matched :jumps-string looks like a buffer's text?
         if s:last_pedit_file != s:mres[2]
             let s:last_pedit_file = s:mres[2]
-            let optbkp = &foldenable
-            set nofoldenable
-            if empty(s:mres[2]) || s:mres[2] =~ "[[:space:]'\"(){}]"
-                exe "pedit" "%"
+            if empty(s:mres[2]) || s:mres[2] =~ "[[:space:]'\"(){}\\][]"
+                if !empty(expand("%"))
+                    exe "pedit" "%"
+                endif
             else
                 exe "pedit" s:mres[2]
-            endif
-            if optbkp
-                set foldenable
             endif
         endif
         let pid = popup_findpreview()
         if pid
-            echom "pid" pid
             let ret = popup_setoptions(pid, {'firstline' : s:mres[1]})
+            call popup_move( pid, { 'line':5, 'col': (&columns/2+3) } )
+            call win_execute( pid, 'norm! zR' )
         endif
-        call popup_move( pid, { 'line':5, 'col': (&columns/2+3) } )
     endif
 
-    let s:result = popup_filter_menu(a:id, s:key)
     return s:result
 endfunc " }}}
 
