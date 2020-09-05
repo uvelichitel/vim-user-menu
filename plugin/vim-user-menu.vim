@@ -409,6 +409,8 @@ func! s:msg(hl, ...)
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
     " Strip the line-number argumen for the user- (count>=7) messages.
     if a:hl >= 7 && args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
+    " Store the messages in a custom history.
+    call add(g:messages, extend([a:hl], args))
     " Normalize higlight/count.
     let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
@@ -508,7 +510,9 @@ func! s:msg(hl, ...)
     endif
     echohl None 
 
-    call s:UserMenu_DoPause(pause)
+    if !s:disable_msg_pause
+        call s:UserMenu_DoPause(pause)
+    endif
 endfunc
 " }}}
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
@@ -718,6 +722,19 @@ endfunc
 
 """""""""""""""""" UTILITY FUNCTIONS {{{
 
+func! Messages(arg=v:none)
+    if a:arg == "clear"
+        let g:messages = []
+        return
+    endif
+    let msgs = deepcopy(g:messages)
+    let g:messages = []
+    let s:disable_msg_pause = 1
+    for msg in msgs
+        call s:msg(msg[0],msg[1:])
+    endfor
+    let s:disable_msg_pause = 0
+endfunc
 func! Flatten(list)
     let new_list = []
     for el in a:list
@@ -774,6 +791,9 @@ onoremap <expr> <F12> UserMenu_Start("o")
 command! -nargs=+ -count=4 -bang -bar -complete=var PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
            \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
+" Messages command.
+command! -nargs=? Messages call Messages(<q-args>)
+
 " Menu command.
 command! Menu call UserMenu_Start("n")
 command! MenuBL call UserMenu_ProvidedKitFuns_BufferSelectionPopup()
@@ -815,6 +835,8 @@ let s:last_pedit_file = ""
 let s:last_jl_first_line = 0
 let s:timers = []
 let s:jl_skip_count = 0
+let g:messages = []
+let s:disable_msg_pause = 0
 
 " The default, provided menu.
 let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save", 
@@ -831,7 +853,7 @@ let g:user_menu_kit = {
                             \ 'opts': [] } ],
             \ "KIT:open" : [ "° Open …",
                         \ { 'type': 'cmds', 'body': ':Ex', 'opts': "in-normal",
-                            \ 'smessage': "p:2:%lblue2.Launching file explorer… In 2 seconds…",
+                            \ 'smessage': "p:2:%lblue2.Launching file explorer… %gold.In 2 seconds…",
                             \ 'message': "p:1:%gold.Explorer started correctly."} ],
             \ "KIT:save" : [ "° Save current buffer",
                        \ { 'type': 'cmds', 'body': ':if !empty(expand("%")) && !&ro | w | endif',
