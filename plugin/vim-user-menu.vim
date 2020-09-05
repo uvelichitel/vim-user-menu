@@ -457,7 +457,7 @@ func! s:msg(hl, ...)
     " Finally: detect any hl:…: prefix, select the color, output the message.
     let c = ["Error", "WarningMsg", "um_gold", "um_green4", "um_blue", "None"]
     " Separate-out the possible hl:…: infix – try in/from the first 3 arguments.
-    let [val,new_arg] = s:UserMenu_GetPrefixValue("hl", join(args[0:2]))
+    let [val,new_arg] = s:UserMenu_GetPrefixValue('hl', join(args[0:2]))
     let args[0:min([len(args)-1,2])] = extend([new_arg],repeat([''], min([len(args),3]) - 1))
     let args = filter(args, "v:val != ''")
     let hl = !empty(val) ? (val =~# '^\d\+$' ? c[val] : val) : c[hl]
