@@ -70,7 +70,7 @@
 "   chain-up/run after the edited item) or an ID of it.
 "
 " – The "start-message-text" is a message text to be shown *before* running the
-"   command. It can start with a special string: "hl:<HL-group>:…" to show the
+"   command. It can start with a special string: "%<HL-group>. " to show the
 "   message in a specified color. There are multiple easy to use hl-groups, like
 "   green,lgreen,yellow,lyellow,lyellow2,blue,blue2,lblue,lblue2,etc.
 "
@@ -108,9 +108,9 @@ func! UserMenu_Start(way)
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
 	    if !s:state_restarting
-		7PRINT! p:1.5:hl:gold:User Menu started in Command-Line mode. The current-command line is:
+		7PRINT! p:1.5:%gold.User Menu started in Command-Line mode. The current-command line is:
 	    endif
-            let s:cmdline_like_msg = "hl:None::" . s:cmdline_like_msg . "█"
+            let s:cmdline_like_msg = "%None.:" . s:cmdline_like_msg . "█"
             7PRINT! s:cmdline_like_msg
         endif
     endif
@@ -380,7 +380,7 @@ func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
             call add(s:timers, timer_start(a:0 >= 2 ? a:2 : 20, function("s:deferredMessageShow")))
             let s:msg_idx = s:msg_idx == -1 ? 0 : s:msg_idx
         else
-            if type(s:msg) == 3 || !empty(substitute(s:msg,"^hl:[^:]*:","","g"))
+            if type(s:msg) == 3 || !empty(substitute(s:msg,"^%[^.]*:","","g"))
                 if type(s:msg) == 3
                     call s:msg(10, s:msg)
                 else
@@ -409,6 +409,7 @@ func! s:msg(hl, ...)
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
     " Strip the line-number argumen for the user- (count>=7) messages.
     if a:hl >= 7 && args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
+    " Normalize higlight/count.
     let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
@@ -454,19 +455,60 @@ func! s:msg(hl, ...)
     endfor
     let args = new_args
 
-    " Finally: detect any hl:…: prefix, select the color, output the message.
-    let c = ["Error", "WarningMsg", "um_gold", "um_green4", "um_blue", "None"]
-    " Separate-out the possible hl:…: infix – try in/from the first 3 arguments.
-    let [val,new_arg] = s:UserMenu_GetPrefixValue('hl', join(args[0:2]))
-    let args[0:min([len(args)-1,2])] = extend([new_arg],repeat([''], min([len(args),3]) - 1))
-    let args = filter(args, "v:val != ''")
-    let hl = !empty(val) ? (val =~# '^\d\+$' ? c[val] : val) : c[hl]
-    let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
-    exe 'echohl ' . hl
-    let [s:pause,s:msg] = s:UserMenu_GetPrefixValue('p%[ause]', join(args) )
-    echom s:msg 
+    " Finally: detect %…. infixes, select color, output the message bit by bit.
+    let c = ["Error", "WarningMsg", "gold", "green4", "blue", "None"]
+    let [pause,new_msg_pre,new_msg_post] = s:UserMenu_GetPrefixValue('p%[ause]', join(args) )
+    let msg = new_msg_pre . new_msg_post
+
+    " Pre-process the message…
+    let val = ""
+    let [arr_hl,arr_msg] = [ [], [] ]
+    while val != v:none
+        let [val,new_msg_pre,new_msg_post] = s:UserMenu_GetPrefixValue('\%', msg)
+        let msg = new_msg_post
+        if val != v:none
+            call add(arr_msg, new_msg_pre)
+            call add(arr_hl, val)
+        elseif !empty(new_msg_pre)
+            if empty(arr_hl)
+                call add(arr_msg, "")
+                call add(arr_hl, hl)
+            endif
+            " The final part of the message.
+            call add(arr_msg, new_msg_pre)
+        endif
+    endwhile
+
+    " Clear the message window…
+    echom ""
+
+    " Post-process ↔ display…
+    let idx = 0
+    while idx < len(arr_hl)
+        " Establish the color.
+        let hl = !empty(arr_hl[idx]) ? (arr_hl[idx] =~# '^\d\+$' ?
+                    \ c[arr_hl[idx]] : arr_hl[idx]) : c[hl]
+        let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
+
+        " The message part…
+        if !empty(arr_msg[idx])
+            echon arr_msg[idx]
+        endif
+
+        " The color…
+        exe 'echohl ' . hl
+
+        " Advance…
+        let idx += 1
+    endwhile
+
+    " Final message part…
+    if !empty(arr_msg[idx:idx])
+        echon arr_msg[idx]
+    endif
     echohl None 
-    call s:UserMenu_DoPause(s:pause)
+
+    call s:UserMenu_DoPause(pause)
 endfunc
 " }}}
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
@@ -499,7 +541,7 @@ func! s:deferredMenuReStart(timer)
     call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
         let l:state_to_desc = { 'n':'Normal', 'i':'Insert', 'v':'Visual', 'o':'o' }
-        7PRINT hl:lyellow3:Opened again the menu in l:state_to_desc[s:way] mode.
+        7PRINT %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
 endfunc
@@ -529,6 +571,8 @@ endfunc
 func! s:UserMenu_DoPause(pause_value)
     if a:pause_value =~ '\v^-=\d+(\.\d+)=$'
         let s:pause_value = float2nr(round(str2float(a:pause_value) * 1000.0))
+    else
+        return
     endif
     if s:pause_value =~ '\v^-=\d+$' && s:pause_value > 0
         call s:UserMenu_PauseAllTimers(1, s:pause_value + 10)
@@ -621,18 +665,22 @@ func! s:UserMenu_GetPrefixValue(pfx, msg)
                     \ ':([^:]*):(.*)$' )
     else
         let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
-                    \ '(%(\d+)|%([a-zA-Z0-9_-]*)\.)(.*)$' )
+                    \ '(\d+|[a-zA-Z0-9_-]*\.)(.*)$' )
     endif
     " Special case → a:msg is a List:
+    " It's limited functionality — it doesn't allow to determine the message
+    " part that preceded and followed the infix (it is just separated out).
     if type(a:msg) == 3 && !empty(mres)
         let cpy = deepcopy(a:msg)
         let cpy[0] = mres[1].mres[3]
-        return [substitute(mres[2],'\.$','','g'),cpy]
+        return [substitute(mres[2],'\.$','','g'),cpy,""]
     elseif !empty(mres)
         " Regular case → a:msg is a String
-        return [ substitute(mres[2],'\.$','','g'), mres[1].mres[3] ]
+        " It returns the message divided into the part that preceded the infix
+        " and that followed it.
+        return [ substitute(mres[2],'\.$','','g'), mres[1], mres[3] ]
     else
-        return [0,a:msg]
+        return [v:none,a:msg,""]
     endif
 endfunc
 " }}}
@@ -783,18 +831,18 @@ let g:user_menu_kit = {
                             \ 'opts': [] } ],
             \ "KIT:open" : [ "° Open …",
                         \ { 'type': 'cmds', 'body': ':Ex', 'opts': "in-normal",
-                            \ 'smessage': "p:2:hl:lblue2:Launching file explorer… In 2 seconds…",
-                            \ 'message': "p:1:hl:gold:Explorer started correctly."} ],
+                            \ 'smessage': "p:2:%lblue2.Launching file explorer… In 2 seconds…",
+                            \ 'message': "p:1:%gold.Explorer started correctly."} ],
             \ "KIT:save" : [ "° Save current buffer",
                        \ { 'type': 'cmds', 'body': ':if !empty(expand("%")) && !&ro | w | endif',
-                            \ 'smessage':'p:2:hl:1:{:let g:_sr = "" | if empty(expand("%")) | let
+                            \ 'smessage':'p:2:%1{:let g:_sr = "" | if empty(expand("%")) | let
                                 \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
                                     \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
                                     \ saved under: " . expand("%")] | endif }
                                 \{g:_m}',
-                            \ 'opts': "in-normal", 'message': "p:1:hl:2:{g:_sr}" } ],
+                            \ 'opts': "in-normal", 'message': "p:1:%2{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
-                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2:hl:2:Quitting Vim
+                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2:%2Quitting Vim
                            \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
                                \ w! .unnamed.txt | endif | endif}All files saved, current file
                                \ modified: {&modified}.", 'opts': "in-normal" } ],
@@ -802,12 +850,12 @@ let g:user_menu_kit = {
                         \ { 'show-if': "exists('g:vichord_omni_completion_loaded')",
                             \ 'type': 'expr', 'body': 'extend(g:, { ''vichord_search_in_let'':
                             \ !get(g:,"vichord_search_in_let",0) })', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:hl:lblue2:The new state: {g:vichord_search_in_let}." } ],
+                            \ 'message': "p:1:%lblue2.The new state: {g:vichord_search_in_let}." } ],
             \ "KIT:toggle-auto-popmenu" :[ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
                         \ { 'show-if': "exists('g:apc_loaded')",
                             \ 'type': 'cmds', 'body': 'if get(b:,"apc_enable",0) | ApcDisable |
                                 \ else | ApcEnable | endif', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:hl:lblue2:The new state: {b:apc_enable}." } ],
+                            \ 'message': "p:1:%lblue2.The new state: {b:apc_enable}." } ],
             \ "KIT:new-win" :[ "° New buffer",
                         \ { 'type': 'norm', 'body': "\<C-W>n", 'opts': "in-normal",
                             \ 'message': "p:1:New buffer created."} ],
@@ -863,7 +911,7 @@ func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
     endif
     if a:inactive
         5PRINT The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
-        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
+        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return "\<ESC>"
     else
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
@@ -913,17 +961,17 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
+        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
     
     let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\++\=\s*"\([^"]\+\)"\s\+.*' )
     if empty(s:mres)
-        7PRINT! p:0.5:hl:0:Error: Couldn't parse the buffer listing.
+        7PRINT! p:0.5:%0Error: Couldn't parse the buffer listing.
         return
     else
         exe "buf" s:mres[1]
-        7PRINT! p:0.5:hl:bluemsg:Switched to the buffer: ('«'.s:mres[2].'»')
+        7PRINT! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
     endif
 endfunc
 " }}}
@@ -988,7 +1036,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7PRINT! p:0.5:hl:lbgreen2:The operation has been correctly canceled.
+        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
     
@@ -1007,12 +1055,12 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     let s:mres = empty(s:mres) ? ["",""] : s:mres
     if s:j < 0
         execute "normal " . (-s:j) . "\<c-o>"
-        7PRINT! p:0.2:hl:bluemsg:Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
+        7PRINT! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
     elseif s:j > 0
         execute "normal " . s:j . "\<c-i>"
-        7PRINT! p:0.2:hl:bluemsg:Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
+        7PRINT! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
     else
-        7PRINT! p:0.5:hl:bluemsg:Already at the position.
+        7PRINT! p:0.5:%bluemsg.Already at the position.
     endif
 endfunc
 " }}}
