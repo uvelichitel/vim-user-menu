@@ -91,11 +91,11 @@ func! UserMenu_Start(way)
 
     call s:UserMenu_EnsureInit()
 
-    let l:state_to_desc = { 'n':'%3Normal%2', 'c':'%3Command Line%2',
-                \ 'i':'%3Insert%2', 'v':'%3Visual%2', 'o':'%3o%2' }
+    let l:state_to_desc = { 'n':'%2Normal%lblue3.', 'c':'%2Command Line%lblue3.',
+                \ 'i':'%2Insert%lblue3.', 'v':'%2Visual%lblue3.', 'o':'%2o%lblue3.' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        Echos 9 %2User Menu started in l:state_to_desc[s:way] mode.
+        Echos 9 %lblue3.User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state. 
         if s:way == 'c'
@@ -109,7 +109,7 @@ func! UserMenu_Start(way)
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
 	    if !s:state_restarting
-		7Echos! p:1.5:%2User Menu started in %3Command-Line%2 mode. The current-command line is:
+		7Echos! p:1.5:%lblue3.User Menu started in %2Command-Line%lblue3. mode. The current-command line is:
 	    endif
             let s:cmdline_like_msg = "%None.:" . s:cmdline_like_msg . "█"
             7Echos! s:cmdline_like_msg
@@ -866,7 +866,7 @@ let g:user_menu_kit = {
                             \ 'smessage':'p:2:%1{:let g:_sr = "" | if empty(expand("%")) | let
                                 \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
                                     \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
-                                    \ saved under: " . expand("%")] | endif }
+                                    \ saved under: %lblue3." . expand("%")] | endif }
                                 \{g:_m}',
                             \ 'opts': "in-normal", 'message': "p:1:%2{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
