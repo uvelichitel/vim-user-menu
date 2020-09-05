@@ -457,10 +457,9 @@ func! s:msg(hl, ...)
             endif
         endfor
         let args = new_args
+        " Store the message in a custom history.
         call add(g:messages, extend([a:hl], args))
     endif
-
-    " Store the messages in a custom history.
 
     " Finally: detect %…. infixes, select color, output the message bit by bit.
     let c = ["Error", "WarningMsg", "gold", "green4", "blue", "None"]
@@ -515,7 +514,7 @@ func! s:msg(hl, ...)
     endif
     echohl None 
 
-    if !s:Messages_state
+    if !s:Messages_state && !empty(filter(arr_msg,'!empty(v:val)'))
         call s:UserMenu_DoPause(pause)
     endif
 endfunc
