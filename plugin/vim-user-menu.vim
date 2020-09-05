@@ -665,7 +665,7 @@ func! s:UserMenu_GetPrefixValue(pfx, msg)
                     \ ':([^:]*):(.*)$' )
     else
         let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
-                    \ '(\d+|[a-zA-Z0-9_-]*\.)(.*)$' )
+                    \ '(\d+\.=|[a-zA-Z0-9_-]*\.)(.*)$' )
     endif
     " Special case → a:msg is a List:
     " It's limited functionality — it doesn't allow to determine the message
