@@ -411,53 +411,56 @@ func! s:msg(hl, ...)
     " Strip the line-number argumen for the user- (count>=7) messages.
     if a:hl >= 7 && type(args[0]) == v:t_string &&
                 \ args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
-    " Store the messages in a custom history.
-    call add(g:messages, extend([a:hl], args))
     " Normalize higlight/count.
     let hl = a:hl >= 7 ? (a:hl-7) : a:hl
 
     " Expand any variables and concatenate separated atoms wrapped in parens.
-    let start_idx = -1
-    let new_args = []
-    for idx in range(len(args))
-        let arg = args[idx]
-        " Unclosed paren?
-        " Discriminate two special cases: (func() and (func(sub_func())
-        if start_idx == -1
-            if type(arg) == v:t_string && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
-                let start_idx = idx
-            endif
-        " A free, closing paren?
-        elseif start_idx >= 0
-            if type(arg) == v:t_string && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
-                call add(new_args,eval(join(args[start_idx:idx])))
-                let start_idx = -1
-                continue
-            endif
-        endif
-    
-        if start_idx == -1
-            " Compensate for explicit variable-expansion requests or {:ex commands…}, etc.
-            let arg = s:UserMenu_ExpandVars(arg)
-
-            if type(arg) == v:t_string 
-                " A variable?
-                if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
-                    let arg = s:UserMenu_ExpandVars("{".arg."}")
-                " A function call or an expression wrapped in parens?
-                elseif arg =~# '\v^\s*(([svgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
-                    let arg = eval(arg)
-                " A \-quoted atom?
-                elseif arg[0] == '\'
-                    let arg = arg[1:]
+    if ! s:Messages_state
+        let start_idx = -1
+        let new_args = []
+        for idx in range(len(args))
+            let arg = args[idx]
+            " Unclosed paren?
+            " Discriminate two special cases: (func() and (func(sub_func())
+            if start_idx == -1
+                if type(arg) == v:t_string && arg =~# '\v^\(.*([^)]|\([^)]*\)|\([^(]*\([^)]*\)[^)]*\))$'
+                    let start_idx = idx
+                endif
+            " A free, closing paren?
+            elseif start_idx >= 0
+                if type(arg) == v:t_string && arg =~# '\v^[^(].*\)$' && arg !~ '\v\([^)]*\)$'
+                    call add(new_args,eval(join(args[start_idx:idx])))
+                    let start_idx = -1
+                    continue
                 endif
             endif
+        
+            if start_idx == -1
+                " Compensate for explicit variable-expansion requests or {:ex commands…}, etc.
+                let arg = s:UserMenu_ExpandVars(arg)
 
-            " Store/save the element.
-            call add(new_args, arg)
-        endif
-    endfor
-    let args = new_args
+                if type(arg) == v:t_string 
+                    " A variable?
+                    if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
+                        let arg = s:UserMenu_ExpandVars("{".arg."}")
+                    " A function call or an expression wrapped in parens?
+                    elseif arg =~# '\v^\s*(([svgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
+                        let arg = eval(arg)
+                    " A \-quoted atom?
+                    elseif arg[0] == '\'
+                        let arg = arg[1:]
+                    endif
+                endif
+
+                " Store/save the element.
+                call add(new_args, arg)
+            endif
+        endfor
+        let args = new_args
+        call add(g:messages, extend([a:hl], args))
+    endif
+
+    " Store the messages in a custom history.
 
     " Finally: detect %…. infixes, select color, output the message bit by bit.
     let c = ["Error", "WarningMsg", "gold", "green4", "blue", "None"]
@@ -512,7 +515,7 @@ func! s:msg(hl, ...)
     endif
     echohl None 
 
-    if !s:disable_msg_pause
+    if !s:Messages_state
         call s:UserMenu_DoPause(pause)
     endif
 endfunc
@@ -729,13 +732,11 @@ func! Messages(arg=v:none)
         let g:messages = []
         return
     endif
-    let msgs = deepcopy(g:messages)
-    let g:messages = []
-    let s:disable_msg_pause = 1
-    for msg in msgs
+    let s:Messages_state = 1
+    for msg in g:messages
         call s:msg(msg[0],msg[1:])
     endfor
-    let s:disable_msg_pause = 0
+    let s:Messages_state = 0
 endfunc
 func! Flatten(list)
     let new_list = []
@@ -842,7 +843,7 @@ let s:last_jl_first_line = 0
 let s:timers = []
 let s:jl_skip_count = 0
 let g:messages = []
-let s:disable_msg_pause = 0
+let s:Messages_state = 0
 
 " The default, provided menu.
 let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save", 
