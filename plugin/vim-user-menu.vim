@@ -789,11 +789,7 @@ cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
 " Following doesn't work as expected…
 onoremap <expr> <F12> UserMenu_Start("o")
 
-" Print command.
-command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
-           \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
-
-" Echos — echo-smart command (same as Echos).
+" Echos — echo-smart command.
 command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
            \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
