@@ -87,7 +87,7 @@
 func! UserMenu_Start(way)
     let s:way = a:way
     let s:cmds = ((s:way == "c2") ? (empty(getcmdline()) ? s:cmds : getcmdline()) : getcmdline())
-    PRINT °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
+    Echos °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call s:UserMenu_EnsureInit()
 
@@ -95,7 +95,7 @@ func! UserMenu_Start(way)
                 \ 'i':'%3Insert%2', 'v':'%3Visual%2', 'o':'%3o%2' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        PRINT 9 %2User Menu started in l:state_to_desc[s:way] mode.
+        Echos 9 %2User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state. 
         if s:way == 'c'
@@ -109,10 +109,10 @@ func! UserMenu_Start(way)
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
 	    if !s:state_restarting
-		7PRINT! p:1.5:%2User Menu started in %3Command-Line%2 mode. The current-command line is:
+		7Echos! p:1.5:%2User Menu started in %3Command-Line%2 mode. The current-command line is:
 	    endif
             let s:cmdline_like_msg = "%None.:" . s:cmdline_like_msg . "█"
-            7PRINT! s:cmdline_like_msg
+            7Echos! s:cmdline_like_msg
         endif
     endif
     let s:state_restarting = 0
@@ -135,7 +135,7 @@ func! UserMenu_Start(way)
         " let g:user_menu = [ #{ kit:"…", name:"…", opts:'…' }, … ]
         elseif type(mitem) == 4
             if !has_key(mitem, 'kit')
-                7PRINT p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
+                7Echos p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
                 continue
             endif
             if mitem['kit'] !~ '^KIT:'
@@ -260,7 +260,7 @@ func! UserMenu_MainCallback(id, result)
     endif
 
     " Important, base debug log.
-    2PRINT °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
+    2Echos °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
     if s:got_it
         let s:opts = s:item[2]
@@ -284,7 +284,7 @@ func! UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
         if a:result > len(a:result)
-            0PRINT Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
+            0Echos Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
         return
     endif
@@ -310,7 +310,7 @@ func! s:UserMenu_ExecuteCommand(timer)
     elseif s:type == 'keys'
         call feedkeys(s:body,"n")
     else
-        0PRINT Unrecognized ·item· type: • s:type •
+        0Echos Unrecognized ·item· type: • s:type •
     endif
 
     " Output message after the command?
@@ -339,7 +339,7 @@ endfunc
 " FUNCTION: s:UserMenu_EnsureInit() {{{
 func! s:UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
-        2PRINT No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
+        2Echos No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
         call s:UserMenu_InitBufAdd()
         return 0
     endif
@@ -355,7 +355,7 @@ func! UserMenu_KeyFilter(id,key)
     let s:key = a:key
     if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
     if s:tryb == 'should-initialize'
-        3PRINT s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
+        3Echos s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
                     \ s:tryb °°° \s:way ←·→ s:way °°° \a:key ←·→ s:key
         call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", '')
         " Consume (still somewhat conditionally ↔ depending on the filter)
@@ -364,7 +364,7 @@ func! UserMenu_KeyFilter(id,key)
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
         let s:result = popup_filter_menu(a:id, a:key)
-        3PRINT s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+        3Echos s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
                     \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
         return s:result
     endif
@@ -385,7 +385,7 @@ func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
                 if type(s:msg) == 3
                     call s:msg(10, s:msg)
                 else
-                    10PRINT s:msg
+                    10Echos s:msg
                 endif
                 redraw
             endif
@@ -534,7 +534,7 @@ endfunc
 " FUNCTION: s:redraw(timer) {{{
 func! s:redraw(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    6PRINT △ redraw called △
+    6Echos △ redraw called △
     redraw
 endfunc
 " }}}
@@ -547,7 +547,7 @@ func! s:deferredMenuReStart(timer)
     call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
         let l:state_to_desc = { 'n':'Normal', 'i':'Insert', 'v':'Visual', 'o':'o' }
-        7PRINT %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
+        7Echos %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
 endfunc
@@ -558,7 +558,7 @@ func! s:deferredMessageShow(timer)
     if type(s:msgs[s:msg_idx]) == 3
         call s:msg(10,s:msgs[s:msg_idx])
     else
-        10PRINT s:msgs[s:msg_idx]
+        10Echos s:msgs[s:msg_idx]
     endif
     let s:msg_idx += 1
     redraw
@@ -595,7 +595,7 @@ func! s:UserMenu_BufOrSesVar(var_to_read,...)
     elseif exists("b:" . a:var_to_read)
         return get( b:, a:var_to_read, a:0 ? a:1 : '' )
     else
-        6PRINT ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
+        6Echos ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
         return a:0 ? a:1 : ''
     endif
 endfunc
@@ -624,7 +624,7 @@ func! s:UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
             let b:[a:var_to_set] = a:value_to_set
             return 1
         else
-            6PRINT ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
+            6Echos ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
             let b:[a:var_to_set] = a:value_to_set
             if exists("b:" . a:var_to_set)
                 let b:[a:var_to_set] = a:value_to_set
@@ -790,10 +790,10 @@ cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
 onoremap <expr> <F12> UserMenu_Start("o")
 
 " Print command.
-command! -nargs=+ -count=4 -bang -bar -complete=var PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
+command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
            \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
-" Echos — echo-smart command (same as PRINT).
+" Echos — echo-smart command (same as Echos).
 command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
            \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
@@ -939,8 +939,8 @@ func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
         vunmap <ESC>
     endif
     if a:inactive
-        5PRINT The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
-        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        5Echos The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
+        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return "\<ESC>"
     else
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
@@ -990,17 +990,17 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
     
     let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\++\=\s*"\([^"]\+\)"\s\+.*' )
     if empty(s:mres)
-        7PRINT! p:0.5:%0Error: Couldn't parse the buffer listing.
+        7Echos! p:0.5:%0Error: Couldn't parse the buffer listing.
         return
     else
         exe "buf" s:mres[1]
-        7PRINT! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
+        7Echos! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
     endif
 endfunc
 " }}}
@@ -1065,7 +1065,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7PRINT! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
     
@@ -1084,12 +1084,12 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     let s:mres = empty(s:mres) ? ["",""] : s:mres
     if s:j < 0
         execute "normal " . (-s:j) . "\<c-o>"
-        7PRINT! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
+        7Echos! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
     elseif s:j > 0
         execute "normal " . s:j . "\<c-i>"
-        7PRINT! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
+        7Echos! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
     else
-        7PRINT! p:0.5:%bluemsg.Already at the position.
+        7Echos! p:0.5:%bluemsg.Already at the position.
     endif
 endfunc
 " }}}
@@ -1125,7 +1125,7 @@ func! UserMenu_JLKeyFilter(id,key)
     endif
 
     let s:popdata = popup_getpos(s:jlpid)
-    2PRINT → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
+    2Echos → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
                 \ →→→ 1st-line: (!empty(s:popdata) ? s:popdata.firstline : -1) ←←←
     let s:result = popup_filter_menu(a:id, s:key)
     if changed > 0 && s:jl_to_use > 0
@@ -1152,7 +1152,7 @@ func! UserMenu_JLKeyFilter(id,key)
         if s:last_jl_first_line == s:popdata.firstline && 
                     \ (s:popdata.firstline > 1 && s:popdata.firstline <
                     \ (len(s:current_jump_list) - s:jl_list_height + 1))
-            1PRINT SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
+            1Echos SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
                         \ 'fl'→ s:popdata.firstline °°
                         \ \s:current_jump_list_idx ↔ s:current_jump_list_idx °°
                         \ \changed ↔ l:changed °° \len(s:current_jump_list)
@@ -1176,7 +1176,7 @@ func! UserMenu_JLKeyFilter(id,key)
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
         let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
 
-        2PRINT \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2] /// % ↔ expand('%')
+        2Echos \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2] /// % ↔ expand('%')
         " The matched :jumps-string looks like a (typical) buffer's text?
         " If yes, then compare % for the file-name change, otherwise compare
         " the matched string ↔ a file name.
@@ -1188,16 +1188,16 @@ func! UserMenu_JLKeyFilter(id,key)
             "let optbkp = &foldenable
             "set nofoldenable
             if !readable
-                3PRINT Expanding % expand('%') // s:mres[2]
+                3Echos Expanding % expand('%') // s:mres[2]
                 if !empty(expand("%"))
                     exe "pedit" "%"
                 endif
             else
-                3PRINT Editing NEW with: pedit → s:mres[2]
+                3Echos Editing NEW with: pedit → s:mres[2]
                 exe "pedit" s:mres[2]
             endif
         else
-            4PRINT ≈≈ UNCHANGED ≈≈
+            4Echos ≈≈ UNCHANGED ≈≈
         endif
         let pid = popup_findpreview()
         if pid
