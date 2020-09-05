@@ -616,16 +616,23 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_GetPrefixValue(pfx, msg) {{{
 func! s:UserMenu_GetPrefixValue(pfx, msg)
-    let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.':([^:]*):(.*)$' )
+    if a:pfx =~ '^[a-zA-Z]'
+        let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
+                    \ ':([^:]*):(.*)$' )
+    else
+        let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
+                    \ '(%(\d+)|%([a-zA-Z0-9_-]*)\.)(.*)$' )
+    endif
     " Special case → a:msg is a List:
     if type(a:msg) == 3 && !empty(mres)
         let cpy = deepcopy(a:msg)
-        " Update the message with the content without the prefix-value:
         let cpy[0] = mres[1].mres[3]
-        return [mres[2],cpy]
+        return [substitute(mres[2],'\.$','','g'),cpy]
+    elseif !empty(mres)
+        " Regular case → a:msg is a String
+        return [ substitute(mres[2],'\.$','','g'), mres[1].mres[3] ]
     else
-        " Regular case → a:msg is a String or no match
-        return empty(mres) ? [0,a:msg] : [ mres[2], mres[1].mres[3] ]
+        return [0,a:msg]
     endif
 endfunc
 " }}}
