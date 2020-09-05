@@ -721,7 +721,26 @@ func! s:UserMenu_UnPauseAllTimersCallback(timer)
     endfor
 endfunc
 " }}}
-
+" FUNCTION: s:evalArg() {{{
+func! s:evalArg(arg)
+    if a:arg =~ '\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
+        if exists(a:arg)
+            return eval(a:arg)
+        endif
+    elseif a:arg =~ '\v^\%(\d+\.=|[a-zA-Z0-9_-]*\.)[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
+        let mres = matchlist( a:arg, '\v^\%(\d+\.=|[a-zA-Z0-9_-]*\.)([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)$' )
+        if !empty(mres) && exists(mres[2])
+            let var = eval(mres[2])
+            if type(var) == v:t_string
+                return '%'.mres[1].var
+            else
+                return '%'.mres[1].string(var)
+            endif
+        endif
+    endif
+    return a:arg
+endfunc
+" }}}
 """""""""""""""""" THE END OF THE HELPER FUNCTIONS }}}
 
 """""""""""""""""" UTILITY FUNCTIONS {{{
@@ -791,7 +810,7 @@ onoremap <expr> <F12> UserMenu_Start("o")
 
 " Echos — echo-smart command.
 command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
-           \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
+           \ map([<f-args>], 's:evalArg(v:val)' ))
 
 " Messages command.
 command! -nargs=? Messages call Messages(<q-args>)
