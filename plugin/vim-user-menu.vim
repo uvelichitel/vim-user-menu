@@ -408,7 +408,8 @@ func! s:msg(hl, ...)
     " Make a copy of the input.
     let args = deepcopy(type(a:000[0]) == 3 ? a:000[0] : a:000)
     " Strip the line-number argumen for the user- (count>=7) messages.
-    if a:hl >= 7 && args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
+    if a:hl >= 7 && type(args[0]) == v:t_string &&
+                \ args[0] =~ '\v^\[\d*\]$' | let args = args[1:] | endif
     " Store the messages in a custom history.
     call add(g:messages, extend([a:hl], args))
     " Normalize higlight/count.
@@ -789,6 +790,10 @@ onoremap <expr> <F12> UserMenu_Start("o")
 
 " Print command.
 command! -nargs=+ -count=4 -bang -bar -complete=var PRINT call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
+           \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
+
+" Echos — echo-smart command (same as PRINT).
+command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
            \ map([<f-args>], 'v:val =~ ''\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'' ? eval(v:val) : v:val'))
 
 " Messages command.
