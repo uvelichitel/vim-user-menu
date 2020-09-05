@@ -91,10 +91,11 @@ func! UserMenu_Start(way)
 
     call s:UserMenu_EnsureInit()
 
-    let l:state_to_desc = { 'n':'Normal', 'c':'Command Line', 'i':'Insert', 'v':'Visual', 'o':'o' }
+    let l:state_to_desc = { 'n':'%3Normal%2', 'c':'%3Command Line%2',
+                \ 'i':'%3Insert%2', 'v':'%3Visual%2', 'o':'%3o%2' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        PRINT 9 User Menu started in l:state_to_desc[s:way] mode.
+        PRINT 9 %2User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state. 
         if s:way == 'c'
@@ -108,7 +109,7 @@ func! UserMenu_Start(way)
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
 	    if !s:state_restarting
-		7PRINT! p:1.5:%gold.User Menu started in Command-Line mode. The current-command line is:
+		7PRINT! p:1.5:%2User Menu started in %3Command-Line%2 mode. The current-command line is:
 	    endif
             let s:cmdline_like_msg = "%None.:" . s:cmdline_like_msg . "█"
             7PRINT! s:cmdline_like_msg
@@ -869,35 +870,36 @@ let g:user_menu_kit = {
                                 \{g:_m}',
                             \ 'opts': "in-normal", 'message': "p:1:%2{g:_sr}" } ],
             \ "KIT:save-all-quit" :[ "° Save all & Quit",
-                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2:%2Quitting Vim
-                           \… {:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
-                               \ w! .unnamed.txt | endif | endif}All files saved, current file
-                               \ modified: {&modified}.", 'opts': "in-normal" } ],
+                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2.5:%lblue2.Quitting Vim
+                           \… %2{:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
+                               \ w! .unnamed.txt | endif | endif}All buffers %lgreen3.saved%2,
+                               \ current file modified: %bluemsg.{&modified}%2..",
+                           \ 'opts': "in-normal" } ],
             \ "KIT:toggle-vichord-mode" :[ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
                         \ { 'show-if': "exists('g:vichord_omni_completion_loaded')",
                             \ 'type': 'expr', 'body': 'extend(g:, { ''vichord_search_in_let'':
                             \ !get(g:,"vichord_search_in_let",0) })', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:%lblue2.The new state: {g:vichord_search_in_let}." } ],
+                            \ 'message': "p:1:%lblue2.The new state: %lgreen3.{g:vichord_search_in_let}%lblue2.." } ],
             \ "KIT:toggle-auto-popmenu" :[ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
                         \ { 'show-if': "exists('g:apc_loaded')",
                             \ 'type': 'cmds', 'body': 'if get(b:,"apc_enable",0) | ApcDisable |
                                 \ else | ApcEnable | endif', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:%lblue2.The new state: {b:apc_enable}." } ],
+                            \ 'message': "p:1:%lblue2.The new state: %lgreen3.{b:apc_enable}%lblue2.." } ],
             \ "KIT:new-win" :[ "° New buffer",
                         \ { 'type': 'norm', 'body': "\<C-W>n", 'opts': "in-normal",
                             \ 'message': "p:1:New buffer created."} ],
             \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
                         \ { 'type': 'keys', 'body': "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", 'opts': "in-visual",
-                            \ 'message':"p:1.5:The selection has been escaped. Here's the s/…/…/g command with it:"} ],
+                            \ 'message':"p:1.5:%3The selection has been escaped. Here's the %2s/…/…/g%3 command with it:"} ],
             \ "KIT:visual-yank-to-subst-escaped" :[ "° «Visual» yank in s/…/…/g escaped …",
                         \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
                             \ 'opts': "in-normal",
-                            \ 'smessage':"p:1.5:Select some text and YANK to get it to :s/…/…/g"} ],
+                            \ 'smessage':"p:1.5:%3Select some text and %2YANK%3 to get it to %2:s/…/…/g"} ],
             \ "KIT:capitalize" :[ "° Upcase _front_ letters in the «selected» words",
                         \ { 'type': 'norm!', 'body': ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
                             \ 'opts': "in-visual",
-                            \ 'message':"p:1:All selected FRONT letters of WORDS are now upcase."} ],
+                            \ 'message':"p:1:%3All selected %2FRONT%3 letters of %2WORDS%3 are now upcase."} ],
             \ "KIT:escape-cmd-line" :[ "° Escape the «command-line»",
                         \ { 'type': 'keys', 'body': "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
                                 \'\\n','\\\\n','g')\<CR>",
