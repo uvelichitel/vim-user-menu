@@ -1,25 +1,25 @@
 " ·•« User Menu Plugin »•· ·•« zphere-zsh/vim-user-popmenu »•·
 " Copyright (c) 2020 « Sebastian Gniazdowski ».
 " License: « Gnu GPL v3 ».
-" 
+"
 " Example user-menu «list» of «dictionaries» (note: the #{ … } syntax is a
 " Dictionary that allows no quoting on keys — it's unavailable in Neovim):
-" 
+"
 " let g:user_menu = [
 "     \ [ "Reload",      #{ type: "cmds", body: ":edit!" } ],
 "     \ [ "Quit Vim",    #{ type: "cmds", body: ":qa!" } ],
 "     \ [ "New Window",  #{ type: "keys", body: "\<C-w>n" } ],
 "     \ [ "Load passwd", #{ type: "expr", body: "LoadPasswd()" } ]
 " \ ]
-" 
+"
 " The "syntax" of the user-menu «list» of «dictionaries» is:
-" [ 
+" [
 "     \ [ "Item text …", #{ type: "type-kind", body: "the command body" } ],
 "       ···
 "       ···
 "     \ [ "Item N text …", #{ <configuration 2> } ]
 " \ ]
-" 
+"
 " The meaning of the dictionary keys:
 "
 " – The "type" is one of: "cmds", "expr", "norm", "keys", "other-item".
@@ -33,8 +33,8 @@
 "   – A sequence of keys to feed into the editor simulating input, like, e.g.:
 "     "\<C-w>n". Type: "keys".
 "   – An item text or an ID of the other user menu entry, e.g.: "Open …" or "1".
-"     Type "other-item" will cause the given other menu item to be run, only. 
-"   
+"     Type "other-item" will cause the given other menu item to be run, only.
+"
 " There are also some optional, advanced keys of the dictionary:
 " [ [ "…", #{ …,
 "     \   opts: "options",
@@ -46,7 +46,7 @@
 "     \   predic: "expression",
 "     \ }
 " \ ] ]
-"   
+"
 " – The "options" is a comma- or space-separated list of subset of these
 "   options: "keep-menu-open", "in-normal", "in-insert",
 "   "in-visual", "in-cmds", "in-sh", "always-show",
@@ -81,7 +81,7 @@
 "
 " – The "additional command body" is an Ex command to be run immediately after
 "   executing the main body ↔ the main command part.
-" 
+"
 
 " FUNCTION: UserMenu_Start() {{{
 func! UserMenu_Start(way)
@@ -97,7 +97,7 @@ func! UserMenu_Start(way)
     if s:way !~ '\v^c2=$'
         Echos 9 %lblue3.User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
-        " Special actions needed for command-line state. 
+        " Special actions needed for command-line state.
         if s:way == 'c'
             call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
             call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
@@ -243,7 +243,7 @@ func! UserMenu_Start(way)
 	let index = inputitems(items)
 	call UserMenu_MainCallback(index)
     endif
- 
+
     redraw
 
     return ""
@@ -324,7 +324,7 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_InitBufAdd() {{{
 " A function that's called when a new buffor is created.
-func! s:UserMenu_InitBufAdd() 
+func! s:UserMenu_InitBufAdd()
     let b:user_menu_cmode_cmd = ""
     let s:current_menu = {}
     let s:current_menu[bufnr()] = []
@@ -363,7 +363,20 @@ func! UserMenu_KeyFilter(id,key)
         " after starting the menu from the «active-command line» state.
         return (a:key == "\<Up>") ? popup_filter_menu(a:id, a:key) : 0
     else
-        let s:result = popup_filter_menu(a:id, a:key)
+        if execute(['let i=index(["k","\<Up>","\<C-E>","\<C-P>"], s:key)', 'echon i']) >= 0
+            let s:key = "k"
+        elseif execute(['let i=index(["j","\<Down>","\<C-Y>","\<C-N>"], s:key)', 'echon i']) >= 0
+            let s:key = "j"
+        elseif execute(['let i=index(["\<C-U>","g"],s:key)','echon i']) >= 0
+            call feedkeys("kkkkkkk" . (i ? "kkkkkkkkkkkkkkkkkkkkkkkkkkkk" : ""),"n")
+            let s:main_skip_count = 1 + 7 + (i ? 28 : 0)
+        elseif execute(['let i=index(["\<C-D>","G"],s:key)','echon i']) >= 0
+            call feedkeys("jjjjjjj" . (i ? "jjjjjjjjjjjjjjjjjjjjjjjjjjjj" : ""),"n")
+            let s:main_skip_count = 1 + 7 + (i ? 28 : 0)
+        endif
+
+        let s:main_skip_count -= s:main_skip_count > 0 ? 1 : 0
+        let s:result = popup_filter_menu(a:id, s:key)
         3Echos s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
                     \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
         return s:result
@@ -374,7 +387,7 @@ func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
     endif
-    if has_key(a:dict,a:key) 
+    if has_key(a:dict,a:key)
         let s:msg = a:dict[a:key]
         if a:0 && a:1 >= 0
             call add(s:msgs, s:msg)
@@ -434,12 +447,12 @@ func! s:msg(hl, ...)
                     continue
                 endif
             endif
-        
+
             if start_idx == -1
                 " Compensate for explicit variable-expansion requests or {:ex commands…}, etc.
                 let arg = s:UserMenu_ExpandVars(arg)
 
-                if type(arg) == v:t_string 
+                if type(arg) == v:t_string
                     " A variable?
                     if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
                         let arg = s:UserMenu_ExpandVars("{".arg."}")
@@ -512,7 +525,7 @@ func! s:msg(hl, ...)
     if !empty(arr_msg[idx:idx])
         echon arr_msg[idx]
     endif
-    echohl None 
+    echohl None
 
     if !s:Messages_state && !empty(filter(arr_msg,'!empty(v:val)'))
         call s:UserMenu_DoPause(pause)
@@ -856,11 +869,12 @@ let s:last_pedit_file = ""
 let s:last_jl_first_line = 0
 let s:timers = []
 let s:jl_skip_count = 0
+let s:main_skip_count = 0
 let g:messages = []
 let s:Messages_state = 0
 
 " The default, provided menu.
-let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save", 
+let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save",
             \ "KIT:save-all-quit", "KIT:toggle-vichord-mode", "KIT:toggle-auto-popmenu",
             \ "KIT:new-win", "KIT:visual-to-subst-escaped", "KIT:visual-yank-to-subst-escaped",
             \ "KIT:capitalize", "KIT:escape-cmd-line" ]
@@ -1008,7 +1022,7 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
         7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
-    
+
     let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\++\=\s*"\([^"]\+\)"\s\+.*' )
     if empty(s:mres)
         7Echos! p:0.5:%0Error: Couldn't parse the buffer listing.
@@ -1083,7 +1097,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
         7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
-    
+
     let s:curjump = -1
     " 1-based ↔ adapted to a:result
     let idx = 1
@@ -1119,11 +1133,13 @@ func! UserMenu_JLKeyFilter(id,key)
         let s:current_jump_list_idx = s:current_jump_list_idx <= 0 ?
                     \ 0 : s:current_jump_list_idx-1
         let changed = -1
+        let s:key = 'k' 
     elseif execute(['let i=index(["j","\<Down>","\<C-Y>","\<C-N>"], s:key)', 'echon i']) >= 0
         let s:current_jump_list_idx = s:current_jump_list_idx >=
                     \ (len(s:current_jump_list)-1) ?
                     \ (len(s:current_jump_list)-1) : s:current_jump_list_idx+1
         let changed = 1
+        let s:key = 'j' 
     elseif execute(['let i=index(["\<C-U>","g"],s:key)','echon i']) >= 0
         call feedkeys("kkkkkkk" . (i ? "kkkkkkkkkkkkkkkkkkkkkkkkkkkk" : ""),"n")
         let s:jl_skip_count = 1 + 7 + (i ? 28 : 0)
@@ -1136,7 +1152,7 @@ func! UserMenu_JLKeyFilter(id,key)
     if s:jl_to_use == -13371337
         let s:jl_to_use = popup_getpos(s:jlpid)['core_height']
         " Initialize also this constant – the size of the list.
-        let s:jl_list_height = s:jl_to_use 
+        let s:jl_list_height = s:jl_to_use
     endif
 
     let s:popdata = popup_getpos(s:jlpid)
@@ -1153,7 +1169,7 @@ func! UserMenu_JLKeyFilter(id,key)
         " — that's now avoided): we've moved through enough items for a scroll
         " to occur, but it doesn't happen (↔ the getpos-field: 'firstline' —
         " remains unchanged).
-        " 
+        "
         " A +1 is needed for the 1 based 'firstline' index, as shown below (the
         " arrows denote the viewport of the list — it's scrolled to the bottom;
         " as it can be seen, 'firstline' will be '2' in such case, so +1 is
@@ -1161,10 +1177,10 @@ func! UserMenu_JLKeyFilter(id,key)
         "    1
         "    2 <--|
         "    3 <--/
-        " 
+        "
         " The improper situation is only when the list isn't scrolled to any
         " boundary, i.e.: f.line > 1 and f.line < tot.l. - l.heig. + 1.
-        if s:last_jl_first_line == s:popdata.firstline && 
+        if s:last_jl_first_line == s:popdata.firstline &&
                     \ (s:popdata.firstline > 1 && s:popdata.firstline <
                     \ (len(s:current_jump_list) - s:jl_list_height + 1))
             1Echos SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
@@ -1184,7 +1200,7 @@ func! UserMenu_JLKeyFilter(id,key)
 
     let s:last_jl_first_line = !empty(s:popdata) ? s:popdata.firstline : 1
 
-    let s:jl_skip_count -= s:jl_skip_count > 0 ? 1 : 0 
+    let s:jl_skip_count -= s:jl_skip_count > 0 ? 1 : 0
     if changed && s:jl_skip_count <= 0
         " Match the final column(s) of the :jumps listing…
         let s:item = s:current_jump_list[s:current_jump_list_idx]
