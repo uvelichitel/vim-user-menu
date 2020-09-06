@@ -507,7 +507,8 @@ func! s:msg(hl, ...)
         " Establish the color.
         let hl = !empty(arr_hl[idx]) ? (arr_hl[idx] =~# '^\d\+$' ?
                     \ c[arr_hl[idx]] : arr_hl[idx]) : c[hl]
-        let hl = (hl !~# '\v^(\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
+        let hl = (hl !~# '\v^(-|\d+|um_[a-z0-9_]+|WarningMsg|Error)$') ? 'um_'.hl : hl
+        let hl = hl == '-' ? 'None' : hl
 
         " The message part…
         if !empty(arr_msg[idx])
@@ -686,7 +687,7 @@ func! s:UserMenu_GetPrefixValue(pfx, msg)
                     \ ':([^:]*):(.*)$' )
     else
         let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
-                    \ '(\d+\.=|[a-zA-Z0-9_-]*\.)(.*)$' )
+                    \ '([0-9-]+\.=|[a-zA-Z0-9_-]*\.)(.*)$' )
     endif
     " Special case → a:msg is a List:
     " It's limited functionality — it doesn't allow to determine the message
@@ -740,8 +741,8 @@ func! s:evalArg(arg)
         if exists(a:arg)
             return eval(a:arg)
         endif
-    elseif a:arg =~ '\v^\%(\d+\.=|[a-zA-Z0-9_-]*\.)[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
-        let mres = matchlist( a:arg, '\v^\%(\d+\.=|[a-zA-Z0-9_-]*\.)([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)$' )
+    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
+        let mres = matchlist( a:arg, '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)$' )
         if !empty(mres) && exists(mres[2])
             let var = eval(mres[2])
             if type(var) == v:t_string
