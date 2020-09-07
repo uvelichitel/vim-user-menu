@@ -781,25 +781,21 @@ func! Flatten(list)
     endfor
     return new_list
 endfunc
-
 func! Mapped(fn, l)
     let new_list = deepcopy(a:l)
     call map(new_list, string(a:fn) . '(v:val)')
     return new_list
 endfunc
-
 func! Filtered(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, string(a:fn) . '(v:val)')
     return new_list
 endfunc
-
 func! FilteredNot(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, '!'.string(a:fn) . '(v:val)')
     return new_list
 endfunc
-
 func! CreateEmptyList(name)
     eval("let ".a:name." = []")
 endfunc
