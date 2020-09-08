@@ -1294,7 +1294,10 @@ endfunc " }}}
 " - hides the split-window,
 " hence the "take-out" :)
 func! UserMenu_ProvidedKitFuns_TakeOutBuf()
+  set bh=hide
+  " The •BUFFER• to take-out.
   let bufnr = bufnr()
+  " Find its containing •WINDOW•.
   let winids = gettabinfo(tabpagenr())[0].windows
   let found_wid = -1
   for wid in winids
@@ -1305,13 +1308,26 @@ func! UserMenu_ProvidedKitFuns_TakeOutBuf()
           break
       endif
   endfor
+
+  " The •OLD-WINDOW• found?
   if found_wid == -1
       7Echos! %0ERROR:%1 Couldn't find the current window-ID, aborting…
       return
   endif
+
+  " The actions: a) new tab, b) load the •BUFFER•, c) hide the •OLD-WINDOW•
   tabnew
+  let new_winid = gettabinfo(tabpagenr())[0].windows[0]
   exe "buf" bufnr
-  call win_execute( found_wid, "hide" )
+  if !win_gotoid(found_wid)
+      8Echos! %1WARNING: Closing of the old window unsuccessful.
+      return
+  endif
+  hide
+  if !win_gotoid(new_winid)
+      8Echos! %1WARNING: Couldn't switch to the new tab \(afer successfully closing the old window).
+      return
+  endif
   7Echos! %bluemsg.The buffer %0.l:bufnr%bluemsg. has been moved to a «NEW» tab.
 endfunc
 " }}}
