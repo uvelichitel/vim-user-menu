@@ -1297,27 +1297,16 @@ func! UserMenu_ProvidedKitFuns_TakeOutBuf()
   set bh=hide
   " The •BUFFER• to take-out.
   let bufnr = bufnr()
-  " Find its containing •WINDOW•.
-  let winids = gettabinfo(tabpagenr())[0].windows
-  let found_wid = -1
-  for wid in winids
-      let wininf = getwininfo(wid)
-      if empty(wininf) | continue | endif
-      if wininf[0].bufnr == bufnr
-          let found_wid = wid
-          break
-      endif
-  endfor
-
   " The •OLD-WINDOW• found?
-  if found_wid == -1
+  let found_wid = win_getid()
+  if !found_wid
       7Echos! %0ERROR:%1 Couldn't find the current window-ID, aborting…
       return
   endif
 
   " The actions: a) new tab, b) load the •BUFFER•, c) hide the •OLD-WINDOW•
   tabnew
-  let new_winid = gettabinfo(tabpagenr())[0].windows[0]
+  let new_winid = win_getid()
   exe "buf" bufnr
   if !win_gotoid(found_wid)
       8Echos! %1WARNING: Closing of the old window unsuccessful.
