@@ -745,9 +745,10 @@ func! s:evalArg(arg)
         if exists(a:arg)
             return eval(a:arg)
         endif
-    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=$'
-        let mres = matchlist( a:arg, '\v^(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=$' )
-        if !empty(mres) && exists(mres[2])
+    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=\(=-=[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=\)=\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=$'
+        echom "match" a:arg
+        let mres = matchlist( a:arg, '\v^(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=(\(=-=[svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=\)=)(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=$' )
+        if !empty(mres) && exists(substitute(mres[2],'\v(^\(=-=|\)=$)',"","g"))
             let var = eval(mres[2])
             if type(var) != v:t_string
                 let var = string(var)
