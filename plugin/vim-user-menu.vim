@@ -248,6 +248,10 @@ func! UserMenu_Start(way)
 
     return ""
 endfunc " }}}
+" FUNCTION: UserMenu_StartSubMenu() {{{
+func! UserMenu_StartSubMenu()
+endfunc
+" }}}
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
     " Clear the message window.
@@ -1106,14 +1110,21 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
         let idx += 1
     endfor
     let s:j = s:result - s:curjump
-    let s:mres = matchlist( s:item,'^\s*\%(\d\+\s\+\)\{3}\(.\+\)$' )
-    let s:mres = empty(s:mres) ? ["",""] : s:mres
+    let s:mres = matchlist( s:item,'^\s*\(\d\+\)\s\+\%(\d\+\s\+\)\{2}\(.*\)$' )
+    let s:mres = empty(s:mres) ? ["","",""] : s:mres
+
+    if string(s:j) != s:mres[1] && string(-s:j) != s:mres[1]
+      8Echos WARNING: Got contradict results for the jump-distance: ((s:j).' vs. '.s:mres[1])
+    endif
+
     if s:j < 0
-        execute "normal " . (-s:j) . "\<c-o>"
-        7Echos! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[1].'».')
+      let s:j = s:mres[1]
+      execute "normal " . s:j . "\<c-o>"
+      7Echos! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[2].'».')
     elseif s:j > 0
+        let s:j = s:mres[1]
         execute "normal " . s:j . "\<c-i>"
-        7Echos! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[1].'».')
+        7Echos! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[2].'».')
     else
         7Echos! p:0.5:%bluemsg.Already at the position.
     endif
@@ -1241,4 +1252,4 @@ endfunc " }}}
 
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
 
-" vim:set ft=vim tw=80 foldmethod=marker:
+" vim:set ft=vim tw=80 foldmethod=marker sw=4 sts=4 et:
