@@ -1120,11 +1120,11 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     if s:j < 0
       let s:j = s:mres[1]
       execute "normal " . s:j . "\<c-o>"
-      7Echos! p:0.2:%bluemsg.Jumped (-s:j) positions back \(^O) to: ('«'.s:mres[2].'».')
+      7Echos! p:0.2:%bluemsg.Jumped %0.(-s:j)%bluemsg. positions back \(^O) to: ('«'.s:mres[2].'».')
     elseif s:j > 0
         let s:j = s:mres[1]
         execute "normal " . s:j . "\<c-i>"
-        7Echos! p:0.2:%bluemsg.Jumped s:j positions forward \(Tab) to: ('«'.s:mres[2].'».')
+        7Echos! p:0.2:%bluemsg.Jumped %0.s:j%bluemsg. positions forward \(Tab) to: ('«'.s:mres[2].'».')
     else
         7Echos! p:0.5:%bluemsg.Already at the position.
     endif
