@@ -255,7 +255,8 @@ endfunc
 " FUNCTION: UserMenu_MainCallback() {{{
 func! UserMenu_MainCallback(id, result)
     " Clear the message window.
-    echom ""
+    echon "\r\r"
+    echon ''
     " Carefully establish the selection and its data.
     let [s:item,s:got_it,s:result,s:type,s:body] = [ [ "", {} ], 0, a:result, "", "" ]
     if a:result > 0 && a:result <= len(s:current_menu[bufnr()])
@@ -458,7 +459,7 @@ func! s:msg(hl, ...)
 
                 if type(arg) == v:t_string
                     " A variable?
-                    if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])=\s*$'
+                    if arg =~# '\v^\s*[svgb]:[a-zA-Z_][a-zA-Z0-9._]*%(\[[^]]+\])*\s*$'
                         let arg = s:UserMenu_ExpandVars("{".arg."}")
                     " A function call or an expression wrapped in parens?
                     elseif arg =~# '\v^\s*(([svgb]:)=[a-zA-Z_][a-zA-Z0-9_-]*)=\s*\(.*\)\s*$'
@@ -503,7 +504,8 @@ func! s:msg(hl, ...)
     endwhile
 
     " Clear the message window…
-    echom ""
+    echon "\r\r"
+    echon ''
 
     " Post-process ↔ display…
     let idx = 0
@@ -531,6 +533,11 @@ func! s:msg(hl, ...)
         echon arr_msg[idx]
     endif
     echohl None
+
+    " 'Submit' the message so that it cannot be deleted with \r…
+    if s:Messages_state
+        echon "\n"
+    endif
 
     if !s:Messages_state && !empty(filter(arr_msg,'!empty(v:val)'))
         call s:UserMenu_DoPause(pause)
@@ -672,7 +679,7 @@ func! s:UserMenu_ExpandVars(text_or_texts)
     elseif type(a:text_or_texts) == v:t_string
         " String input.
         return substitute(a:text_or_texts, '\v\{((:[^}]+|([svgb]\:|\&)[a-zA-Z_]
-                        \[a-zA-Z0-9._]*%(\[[^]]+\])=))\}',
+                        \[a-zA-Z0-9._]*%(\[[^]]+\])*))\}',
                         \ '\=((submatch(1)[0] == ":") ?
                         \ ((submatch(1)[1] == ":") ?
                         \ execute(submatch(1))[1:] :
@@ -740,22 +747,49 @@ func! s:UserMenu_UnPauseAllTimersCallback(timer)
 endfunc
 " }}}
 " FUNCTION: s:evalArg() {{{
-func! s:evalArg(arg)
-    if a:arg =~ '\v^[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
-        if exists(a:arg)
-            return eval(a:arg)
-        endif
-    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=\(=-=[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=\)=\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=$'
-        echom "match" a:arg
-        let mres = matchlist( a:arg, '\v^(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=(\(=-=[svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=\)=)(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=$' )
-        if !empty(mres) && exists(substitute(mres[2],'\v(^\(=-=|\)=$)',"","g"))
-            let var = eval(mres[2])
-            if type(var) != v:t_string
-                let var = string(var)
-            endif
-            return mres[1].var.mres[3] 
-        endif
+func! s:evalArg(l,a,arg)
+    call extend(l:,a:l)
+    ""echom "ENTRY —→ dict:l °" a:l "° —→ dict:a °" a:a "°"
+    " 1 — %firstcol.
+    " 2 — whole expression, possibly (-l:var)
+    " 3 — the optional opening paren
+    " 4 — the optional closing paren
+    " 5 — %endcol.
+    let mres = matchlist(a:arg, '\v^(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=(([(]=)-=[svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])*([)]=))(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=$')
+    " Not a variable-expression? → return the original string…
+    if empty(mres) || mres[3].mres[4] !~ '^\(()\)\=$'
+        "echom "Returning for" a:arg
+        return a:arg
     endif
+    " Separate-out the core-variable name and the sign.
+    let no_dict_arg = substitute(mres[2], '^[(]\=\(-\=\)[svbgla]:\(.\{-}\)[)]\=$', '\1\2', '')
+    "echom no_dict_arg "// 1"
+    let sign = (no_dict_arg =~ '^-.*') ? -1 : 1
+    if sign < 0
+        let no_dict_arg = no_dict_arg[1:]
+    endif
+    "echom no_dict_arg "// 2"
+    
+    " Fetch the values — any variable-expression except for a:, where only
+    " a:simple_forms are allowed, e.g.: no a:complex[s:form]…
+    if mres[2] =~ '^(\=-\=a:.*'
+        "echom "From-dict path ↔" no_dict_arg "—→" get(a:a, no_dict_arg, "<no-such-key>")
+        if has_key(a:a, no_dict_arg)
+            let value = get(a:a, no_dict_arg, "STRANGE-ERROR…")
+            let value = sign < 0 ? -1*value : value
+            return mres[1].value.mres[5]
+        endif
+    elseif exists(substitute(mres[2],'\v(^\(=-=|\)=$)',"","g"))
+        "echom "From-eval path ↔" no_dict_arg "↔" eval(mres[2])
+        " Via-eval path…
+        let value = eval(mres[2])
+        if type(value) != v:t_string
+            let value = string(value)
+        endif
+        return mres[1].value.mres[5]
+    endif
+    " Fall-through path ↔ return of the original string.
+    "echom "Fall-through path ↔" no_dict_arg "↔ dict:l °" a:l "° ↔ dict:a °" a:a "°"
     return a:arg
 endfunc
 " }}}
@@ -824,7 +858,7 @@ onoremap <expr> <F12> UserMenu_Start("o")
 
 " Echos — echo-smart command.
 command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
-           \ map([<f-args>], 's:evalArg(v:val)' ))
+            \ map([<f-args>], 's:evalArg(exists("l:")?(l:):{},exists("a:")?(a:):{},v:val)' ))
 
 " Messages command.
 command! -nargs=? Messages call Messages(<q-args>)
@@ -1215,7 +1249,7 @@ func! UserMenu_JLKeyFilter(id,key)
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
         let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
 
-        2Echos \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2] /// % ↔ expand('%')
+        2Echos \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2][-20:] /// % ↔ expand('%')
         " The matched :jumps-string looks like a (typical) buffer's text?
         " If yes, then compare % for the file-name change, otherwise compare
         " the matched string ↔ a file name.
