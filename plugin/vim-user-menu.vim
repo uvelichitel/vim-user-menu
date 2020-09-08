@@ -1288,7 +1288,7 @@ func! UserMenu_JLKeyFilter(id,key)
     return s:result
 endfunc " }}}
 
-" FUNCTION: UserMenu_ProvidedKitFuns_TakeOutBuf()
+" FUNCTION: UserMenu_ProvidedKitFuns_TakeOutBuf() {{{
 " Takes the current buffer — IF it's located in a split-window — and:
 " - creates new tab and loads the same buffer there,
 " - hides the split-window,
