@@ -909,12 +909,16 @@ let g:messages = []
 let s:Messages_state = 0
 
 " The default, provided menu.
-let g:user_menu_default = [ "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save",
+let g:user_menu_default = [ "KIT:buf-take-out", "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save",
             \ "KIT:save-all-quit", "KIT:toggle-vichord-mode", "KIT:toggle-auto-popmenu",
             \ "KIT:new-win", "KIT:visual-to-subst-escaped", "KIT:visual-yank-to-subst-escaped",
             \ "KIT:capitalize", "KIT:escape-cmd-line" ]
 
 let g:user_menu_kit = {
+            \ "KIT:buf-take-out" : [ "° Take-Out «buffer» —→ new tab…",
+                    \ { 'show-if': '(len(gettabinfo(tabpagenr())[0].windows) >= 2)',
+                            \ 'type': 'expr', 'body': 'UserMenu_ProvidedKitFuns_TakeOutBuf()',
+                            \ 'opts': [] } ],
             \ "KIT:buffers" : [ "° BUFFER «LIST» …",
                     \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
                             \ 'opts': [] } ],
@@ -1284,6 +1288,36 @@ func! UserMenu_JLKeyFilter(id,key)
     return s:result
 endfunc " }}}
 
+" FUNCTION: UserMenu_ProvidedKitFuns_TakeOutBuf()
+" Takes the current buffer — IF it's located in a split-window — and:
+" - creates new tab and loads the same buffer there,
+" - hides the split-window,
+" hence the "take-out" :)
+func! UserMenu_ProvidedKitFuns_TakeOutBuf()
+  let bufnr = bufnr()
+  let winids = gettabinfo(tabpagenr())[0].windows
+  let found_wid = -1
+  for wid in winids
+      let wininf = getwininfo(wid)
+      if empty(wininf) | continue | endif
+      if wininf[0].bufnr == bufnr
+          let found_wid = wid
+          break
+      endif
+  endfor
+  if found_wid == -1
+      7Echos! %0ERROR:%1 Couldn't find the current window-ID, aborting…
+      return
+  endif
+  tabnew
+  exe "buf" bufnr
+  call win_execute( found_wid, "hide" )
+  7Echos! %bluemsg.The buffer %0.l:bufnr%bluemsg. has been moved to a «NEW» tab.
+endfunc
+" }}}
+
+command! TakeOutBuf call UserMenu_ProvidedKitFuns_TakeOutBuf()
+    
 """""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
 
 " vim:set ft=vim tw=80 foldmethod=marker sw=4 sts=4 et:
