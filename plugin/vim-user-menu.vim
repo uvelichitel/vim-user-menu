@@ -753,7 +753,7 @@ func! s:evalArg(arg)
             if type(var) != v:t_string
                 let var = string(var)
             endif
-            return (!empty(mres[1]) ? mres[1] : '').var.(!empty(mres[3]) ? mres[3] : '')
+            return mres[1].var.mres[3] 
         endif
     endif
     return a:arg
