@@ -745,15 +745,14 @@ func! s:evalArg(arg)
         if exists(a:arg)
             return eval(a:arg)
         endif
-    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=$'
-        let mres = matchlist( a:arg, '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)$' )
+    elseif a:arg =~ '\v^\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=[svbgla]:[a-zA-Z0-9._]+(\[[^]]+\])=\%([0-9-]+\.=|[a-zA-Z0-9_-]*\.)=$'
+        let mres = matchlist( a:arg, '\v^(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=([svbgla]:[a-zA-Z0-9._]+%(\[[^]]+\])=)(\%%([0-9-]+\.=|[a-zA-Z0-9_-]*\.))=$' )
         if !empty(mres) && exists(mres[2])
             let var = eval(mres[2])
-            if type(var) == v:t_string
-                return '%'.mres[1].var
-            else
-                return '%'.mres[1].string(var)
+            if type(var) != v:t_string
+                let var = string(var)
             endif
+            return (!empty(mres[1]) ? mres[1] : '').var.(!empty(mres[3]) ? mres[3] : '')
         endif
     endif
     return a:arg
