@@ -83,8 +83,11 @@
 "   executing the main body ↔ the main command part.
 "
 
-" FUNCTION: UserMenu_Start() {{{
-func! UserMenu_Start(way)
+function! UserMenu_Start(way)
+    call s:UserMenu_Start(a:way)
+endfunc
+" FUNCTION: s:UserMenu_Start() {{{
+function! s:UserMenu_Start(way)
     let s:way = a:way
     let s:cmds = ((s:way == "c2") ? (empty(getcmdline()) ? s:cmds : getcmdline()) : getcmdline())
     Echos °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
@@ -102,7 +105,7 @@ func! UserMenu_Start(way)
             call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", ':'.s:cmds)
             call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", 'should-initialize')
             call feedkeys("\<ESC>","n")
-            call add(s:timers, timer_start(10, function("s:deferredMenuReStart")))
+            call add(s:timers, timer_start(70, function("s:deferredMenuReStart")))
             return ""
         endif
 
@@ -231,29 +234,34 @@ func! UserMenu_Start(way)
         \ 'padding': [ 1, 1, 1, 1 ] }
 
     if exists('*popup_menu')
-	" Vim
-	call popup_menu(items, secarg)
-    " The plugin currently is unable to render the popup, so… no NeoVim.
+        " Vim
+        call popup_menu(items, secarg)
+        " The plugin currently is unable to render the popup, so… no NeoVim.
     elseif has('nvim') && exists('g:loaded_popup_menu_plugin')
-	" Neovim
-	" g:loaded_popup_menu_plugin is defined by kamykn/popup-menu.nvim.
-	call popup_menu#open(items, secarg)
+        " Neovim
+        " g:loaded_popup_menu_plugin is defined by kamykn/popup-menu.nvim.
+        call popup_menu#open(items, secarg)
     else
-	" Old vim/neovim
-	let index = inputitems(items)
-	call UserMenu_MainCallback(index)
+        " Old vim/neovim
+        let index = inputitems(items)
+        call UserMenu_MainCallback(index)
     endif
 
     redraw
 
     return ""
 endfunc " }}}
-" FUNCTION: UserMenu_StartSubMenu() {{{
-func! UserMenu_StartSubMenu()
+" FUNCTION: s:UserMenu_StartSubMenu() {{{
+function! s:UserMenu_StartSubMenu()
 endfunc
 " }}}
 " FUNCTION: UserMenu_MainCallback() {{{
-func! UserMenu_MainCallback(id, result)
+function! UserMenu_MainCallback(id, result)
+    call s:UserMenu_MainCallback(a:id, a:result)
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_MainCallback() {{{
+function! s:UserMenu_MainCallback(id, result)
     " Clear the message window.
     echon "\r\r"
     echon ''
@@ -302,7 +310,7 @@ func! UserMenu_MainCallback(id, result)
 endfunction
 " }}}
 " FUNCTION: s:UserMenu_ExecuteCommand() {{{
-func! s:UserMenu_ExecuteCommand(timer)
+function! s:UserMenu_ExecuteCommand(timer)
     call filter( s:timers, 'v:val != a:timer' )
 
     " Read the attached action specification and perform it.
@@ -322,14 +330,14 @@ func! s:UserMenu_ExecuteCommand(timer)
     call s:UserMenu_DeployDeferred_TimerTriggered_Message(s:item[1], 'message', 1)
 
     " Cancel ex command?
-    if has_key(s:opts, 'exit-to-norm') && s:had_cmd
-	call feedkeys("\<C-U>\<BS>","n")
+    if exists("s:opts") && has_key(s:opts, 'exit-to-norm') && s:had_cmd
+        call feedkeys("\<C-U>\<BS>","n")
     endif
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_InitBufAdd() {{{
 " A function that's called when a new buffor is created.
-func! s:UserMenu_InitBufAdd()
+function! s:UserMenu_InitBufAdd()
     let b:user_menu_cmode_cmd = ""
     let s:current_menu = {}
     let s:current_menu[bufnr()] = []
@@ -337,12 +345,12 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_InitBufRead() {{{
 " A funcion that's called when the buffer is loaded.
-func! s:UserMenu_InitBufRead()
+function! s:UserMenu_InitBufRead()
     call s:UserMenu_InitBufAdd()
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_EnsureInit() {{{
-func! s:UserMenu_EnsureInit()
+function! s:UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
         2Echos No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
         call s:UserMenu_InitBufAdd()
@@ -355,7 +363,12 @@ endfunc
 """""""""""""""""" HELPER FUNCTIONS {{{
 
 " FUNCTION: UserMenu_KeyFilter() {{{
-func! UserMenu_KeyFilter(id,key)
+function! UserMenu_KeyFilter(id,key)
+    return s:UserMenu_KeyFilter(a:id,a:key)
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_KeyFilter() {{{
+function! s:UserMenu_KeyFilter(id,key)
     let s:tryb = s:UserMenu_BufOrSesVar("user_menu_init_cmd_mode")
     let s:key = a:key
     if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
@@ -388,7 +401,7 @@ func! UserMenu_KeyFilter(id,key)
     endif
 endfunc " }}}
 " FUNCTION: s:UserMenu_DeployDeferred_TimerTriggered_Message() {{{
-func! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
+function! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
     if a:0 && a:1 > 0
         let [s:msgs, s:msg_idx] = [ exists("s:msgs") ? s:msgs : [], exists("s:msg_idx") ? s:msg_idx : 0 ]
     endif
@@ -418,7 +431,7 @@ endfunc
 " 3 - notice        …
 " 4 - debug         …
 " 5 - debug2        …
-func! s:msg(hl, ...)
+function! s:msg(hl, ...)
     " Log only warnings and errors by default.
     if a:hl < 7 && a:hl > get(g:,'user_menu_log_level', 1) || a:0 == 0
         return
@@ -545,7 +558,7 @@ func! s:msg(hl, ...)
 endfunc
 " }}}
 " FUNCTION: s:msgcmdimpl(hl,...) {{{
-func! s:msgcmdimpl(hl, bang, linenum, ...)
+function! s:msgcmdimpl(hl, bang, linenum, ...)
     if(!empty(a:bang))
         call s:UserMenu_DeployDeferred_TimerTriggered_Message(
                     \ { 'm': (a:hl < 7 ? extend(["[".a:linenum."]"], a:000[0]) : a:000[0]) }, 'm', 1)
@@ -559,19 +572,19 @@ func! s:msgcmdimpl(hl, bang, linenum, ...)
 endfunc
 " }}}
 " FUNCTION: s:redraw(timer) {{{
-func! s:redraw(timer)
+function! s:redraw(timer)
     call filter( s:timers, 'v:val != a:timer' )
     6Echos △ redraw called △
     redraw
 endfunc
 " }}}
 " FUNCTION: s:deferredMenuReStart(timer) {{{
-func! s:deferredMenuReStart(timer)
+function! s:deferredMenuReStart(timer)
     call filter( s:timers, 'v:val != a:timer' )
     if s:way =~ '^c.*'
         call feedkeys("\<Up>","n")
     endif
-    call UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
+    call s:UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
         let l:state_to_desc = { 'n':'Normal', 'i':'Insert', 'v':'Visual', 'o':'o' }
         7Echos %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
@@ -580,7 +593,7 @@ func! s:deferredMenuReStart(timer)
 endfunc
 " }}}
 " FUNCTION: s:deferredMessageShow(timer) {{{
-func! s:deferredMessageShow(timer)
+function! s:deferredMessageShow(timer)
     call filter( s:timers, 'v:val != a:timer' )
     if type(s:msgs[s:msg_idx]) == 3
         call s:msg(10,s:msgs[s:msg_idx])
@@ -592,7 +605,7 @@ func! s:deferredMessageShow(timer)
 endfunc
 " }}}
 " FUNCTION: s:closePreviewPopup(timer) {{{
-func! s:closePreviewPopup(timer)
+function! s:closePreviewPopup(timer)
     call filter( s:timers, 'v:val != a:timer' )
     let pid = popup_findpreview()
     if pid
@@ -601,7 +614,7 @@ func! s:closePreviewPopup(timer)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_DoPause(pause_value) {{{
-func! s:UserMenu_DoPause(pause_value)
+function! s:UserMenu_DoPause(pause_value)
     if a:pause_value =~ '\v^-=\d+(\.\d+)=$'
         let s:pause_value = float2nr(round(str2float(a:pause_value) * 1000.0))
     else
@@ -615,7 +628,7 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_BufOrSesVar() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! s:UserMenu_BufOrSesVar(var_to_read,...)
+function! s:UserMenu_BufOrSesVar(var_to_read,...)
     let s:tmp = a:var_to_read
     if exists("s:" . a:var_to_read)
         return get( s:, a:var_to_read, a:0 ? a:1 : '' )
@@ -629,7 +642,7 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_CleanupSesVars() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! s:UserMenu_CleanupSesVars(...)
+function! s:UserMenu_CleanupSesVars(...)
     if has_key(s:,'user_menu_init_cmd_mode')
         call remove(s:,'user_menu_init_cmd_mode')
     endif
@@ -642,7 +655,7 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_BufOrSesVarSet() {{{
 " Returns b:<arg> or s:<arg>, if the 1st one doesn't exist.
-func! s:UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
+function! s:UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
     let s:tmp = a:var_to_set
     if exists("s:" . a:var_to_set)
         let s:[a:var_to_set] = a:value_to_set
@@ -666,7 +679,7 @@ endfunc
 " }}}
 " FUNCTION: s:UserMenu_ExpandVars {{{
 " It expands all {:command …'s} and {[sgb]:user_variable's}.
-func! s:UserMenu_ExpandVars(text_or_texts)
+function! s:UserMenu_ExpandVars(text_or_texts)
     if type(a:text_or_texts) == v:t_list
         " List input.
         let texts=deepcopy(a:text_or_texts)
@@ -692,7 +705,7 @@ func! s:UserMenu_ExpandVars(text_or_texts)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_GetPrefixValue(pfx, msg) {{{
-func! s:UserMenu_GetPrefixValue(pfx, msg)
+function! s:UserMenu_GetPrefixValue(pfx, msg)
     if a:pfx =~ '^[a-zA-Z]'
         let mres = matchlist( (type(a:msg) == 3 ? a:msg[0] : a:msg),'\v^(.{-})'.a:pfx.
                     \ ':([^:]*):(.*)$' )
@@ -718,7 +731,7 @@ func! s:UserMenu_GetPrefixValue(pfx, msg)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_RestoreCmdLineFrom() {{{
-func! s:UserMenu_RestoreCmdLine(timer)
+function! s:UserMenu_RestoreCmdLine(timer)
     call filter( s:timers, 'v:val != a:timer' )
     call feedkeys(":\<C-U>".(s:UserMenu_BufOrSesVar("user_menu_cmode_cmd")[1:]),"ntxi!")
     call s:UserMenu_BufOrSesVarSet("user_menu_cmode_cmd", "")
@@ -727,7 +740,7 @@ endfunc
 " }}}
 
 " FUNCTION: s:UserMenu_PauseAllTimers() {{{
-func! s:UserMenu_PauseAllTimers(pause,time)
+function! s:UserMenu_PauseAllTimers(pause,time)
     for t in s:timers
         call timer_pause(t,a:pause)
     endfor
@@ -739,7 +752,7 @@ func! s:UserMenu_PauseAllTimers(pause,time)
 endfunc
 " }}}
 " FUNCTION: s:UserMenu_UnPauseAllTimersCallback() {{{
-func! s:UserMenu_UnPauseAllTimersCallback(timer)
+function! s:UserMenu_UnPauseAllTimersCallback(timer)
     call filter( s:timers, 'v:val != a:timer' )
     for t in s:timers
         call timer_pause(t,0)
@@ -747,7 +760,7 @@ func! s:UserMenu_UnPauseAllTimersCallback(timer)
 endfunc
 " }}}
 " FUNCTION: s:evalArg() {{{
-func! s:evalArg(l,a,arg)
+function! s:evalArg(l,a,arg)
     call extend(l:,a:l)
     ""echom "ENTRY —→ dict:l °" a:l "° —→ dict:a °" a:a "°"
     " 1 — %firstcol.
@@ -797,7 +810,7 @@ endfunc
 
 """""""""""""""""" UTILITY FUNCTIONS {{{
 
-func! Messages(arg=v:none)
+function! Messages2(arg=v:none)
     if a:arg == "clear"
         let g:messages = []
         return
@@ -808,7 +821,7 @@ func! Messages(arg=v:none)
     endfor
     let s:Messages_state = 0
 endfunc
-func! Flatten(list)
+function! Flatten(list)
     let new_list = []
     for el in a:list
         if type(el) == 3
@@ -819,28 +832,31 @@ func! Flatten(list)
     endfor
     return new_list
 endfunc
-func! Mapped(fn, l)
+function! Mapped(fn, l)
     let new_list = deepcopy(a:l)
     call map(new_list, string(a:fn) . '(v:val)')
     return new_list
 endfunc
-func! Filtered(fn, l)
+function! Filtered(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, string(a:fn) . '(v:val)')
     return new_list
 endfunc
-func! FilteredNot(fn, l)
+function! FilteredNot(fn, l)
     let new_list = deepcopy(a:l)
     call filter(new_list, '!'.string(a:fn) . '(v:val)')
     return new_list
 endfunc
-func! CreateEmptyList(name)
+function! CreateEmptyList(name)
     eval("let ".a:name." = []")
 endfunc
 
 """""""""""""""""" THE END OF THE UTILITY FUNCTIONS }}}
 
 """""""""""""""""" THE SCRIPT BODY {{{
+function! s:UserMenu_GetSDict()
+    return s:
+endfunct
 
 augroup UserMenu_InitGroup
     au!
@@ -897,12 +913,15 @@ hi! um_lbgreen ctermfg=lightgreen cterm=bold
 hi! um_lbgreen2 ctermfg=118 cterm=bold
 hi! um_lbgreen3 ctermfg=154 cterm=bold
 
+" A global, common timer-list for pausing…
+let g:timers = exists("g:timers") ? g:timers : []
+
 " Session-variables initialization.
 let [ s:msgs, s:msg_idx ] = [ [], -1 ]
 let s:state_restarting = 0
 let s:last_pedit_file = ""
 let s:last_jl_first_line = 0
-let s:timers = []
+let s:timers = g:timers
 let s:jl_skip_count = 0
 let s:main_skip_count = 0
 let g:messages = []
@@ -955,7 +974,7 @@ let g:user_menu_kit = {
                             \ 'message': "p:1:%lblue2.The new state: %lgreen3.{b:apc_enable}%lblue2.." } ],
             \ "KIT:new-win" :[ "° New buffer",
                         \ { 'type': 'norm', 'body': "\<C-W>n", 'opts': "in-normal",
-                            \ 'message': "p:1:New buffer created."} ],
+                            \ 'message': "p:1:%3New buffer created."} ],
             \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
                         \ { 'type': 'keys', 'body': "y:let @@ = substitute(escape(@@,'/\\'),
                             \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", 'opts': "in-visual",
@@ -979,7 +998,7 @@ let g:user_menu_kit = {
 """""""""""""""""" IN-MENU USE FUNCTIONS (THE PROVIDED-KIT FUNCTIONS) {{{
 
 " FUNCTION: UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst() {{{
-func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
+function! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
     let s:y = maparg("y", "v")
     let s:v = maparg("v", "v")
     let s:esc = maparg("\<ESC>", "v")
@@ -990,7 +1009,7 @@ func! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive) {{{
-func! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
+function! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
     if !empty(s:y)
         exe 'vnoremap y ' . s:y
     else
@@ -1017,7 +1036,7 @@ endfunc
 " }}}
 
 " FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionPopup() {{{
-func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
+function! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
     hi! UMPmenuBL ctermfg=82 ctermbg=darkblue
     hi! UMPmenuBLSB ctermfg=82 ctermbg=darkblue
     hi! UMPmenuBLTH ctermfg=82 ctermbg=darkblue
@@ -1050,7 +1069,12 @@ func! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
-func! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
+function! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
+    call s:UserMenu_ProvidedKitFuns_BufferSelectionCallback(a:id, a:result)
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
+function! s:UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     " Selected or cancelled?
     let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
     if s:result > 0 && s:result <= len(s:current_buffer_list)
@@ -1074,7 +1098,7 @@ endfunc
 " }}}
 
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionPopup() {{{
-func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
+function! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
     hi! UMPmenuJL ctermfg=lightyellow ctermbg=22
     hi! UMPmenuJLSB ctermfg=51 ctermbg=darkblue
     hi! UMPmenuJLTH ctermfg=51 ctermbg=darkblue
@@ -1124,7 +1148,7 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
 endfunc
 " }}}
 " FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
-func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
+function! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     call add( s:timers, timer_start(1000, function("s:closePreviewPopup")) )
     " Selected or cancelled?
     let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
@@ -1169,7 +1193,12 @@ func! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
 endfunc
 " }}}
 " FUNCTION: UserMenu_JLKeyFilter() {{{
-func! UserMenu_JLKeyFilter(id,key)
+function! UserMenu_JLKeyFilter(id,key)
+    call s:UserMenu_JLKeyFilter(a:id,a:key)
+endfunc
+" }}}
+" FUNCTION: s:UserMenu_JLKeyFilter() {{{
+function! s:UserMenu_JLKeyFilter(id,key)
     redraw
     let s:key = a:key
 
@@ -1293,7 +1322,7 @@ endfunc " }}}
 " - creates new tab and loads the same buffer there,
 " - hides the split-window,
 " hence the "take-out" :)
-func! UserMenu_ProvidedKitFuns_TakeOutBuf()
+function! UserMenu_ProvidedKitFuns_TakeOutBuf()
   set bh=hide
   " The •BUFFER• to take-out.
   let bufnr = bufnr()
