@@ -90,7 +90,7 @@ endfunc
 function! s:UserMenu_Start(way)
     let s:way = a:way
     let s:cmds = ((s:way == "c2") ? (empty(getcmdline()) ? s:cmds : getcmdline()) : getcmdline())
-    Echos °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
+    PrintSmart °°° UserMenu_Start °°° Mode: s:way ((!empty(s:cmds)) ? '←·→ Cmd: '.string(s:cmds):'')
 
     call s:UserMenu_EnsureInit()
 
@@ -98,7 +98,7 @@ function! s:UserMenu_Start(way)
                 \ 'i':'%2Insert%lblue3.', 'v':'%2Visual%lblue3.', 'o':'%2o%lblue3.' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        Echos 9 %lblue3.User Menu started in l:state_to_desc[s:way] mode.
+        PrintSmart 9 %lblue3.User Menu started in l:state_to_desc[s:way] mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state.
         if s:way == 'c'
@@ -112,10 +112,10 @@ function! s:UserMenu_Start(way)
         let s:cmdline_like_msg = s:cmds
         if s:way == 'c2'
 	    if !s:state_restarting
-		7Echos! p:1.5:%lblue3.User Menu started in %2Command-Line%lblue3. mode. The current-command line is:
+		7PrintSmart! p:1.5:%lblue3.User Menu started in %2Command-Line%lblue3. mode. The current-command line is:
 	    endif
             let s:cmdline_like_msg = "%None.:" . s:cmdline_like_msg . "█"
-            7Echos! s:cmdline_like_msg
+            7PrintSmart! s:cmdline_like_msg
         endif
     endif
     let s:state_restarting = 0
@@ -138,7 +138,7 @@ function! s:UserMenu_Start(way)
         " let g:user_menu = [ #{ kit:"…", name:"…", opts:'…' }, … ]
         elseif type(mitem) == 4
             if !has_key(mitem, 'kit')
-                7Echos p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
+                7PrintSmart p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
                 continue
             endif
             if mitem['kit'] !~ '^KIT:'
@@ -273,7 +273,7 @@ function! s:UserMenu_MainCallback(id, result)
     endif
 
     " Important, base debug log.
-    2Echos °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
+    2PrintSmart °° Callback °° °id° ≈≈ s:result ←·→ (s:got_it ? string(s:item[0]).' ←·→ TPE ·'.s:type.'· BDY ·'.s:body.'·' : '≠')
 
     if s:got_it
         let s:opts = s:item[2]
@@ -297,7 +297,7 @@ function! s:UserMenu_MainCallback(id, result)
     " The menu has been canceled? (ESC, ^C, cursor move)
     if !s:got_it
         if a:result > len(a:result)
-            0Echos Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
+            0PrintSmart Error: the index is too large →→ ••• s:result > len(s:current_menu) •••
         endif
         return
     endif
@@ -323,7 +323,7 @@ function! s:UserMenu_ExecuteCommand(timer)
     elseif s:type == 'keys'
         call feedkeys(s:body,"n")
     else
-        0Echos Unrecognized ·item· type: • s:type •
+        0PrintSmart Unrecognized ·item· type: • s:type •
     endif
 
     " Output message after the command?
@@ -352,7 +352,7 @@ endfunc
 " FUNCTION: s:UserMenu_EnsureInit() {{{
 function! s:UserMenu_EnsureInit()
     if !exists("b:user_menu_cmode_cmd")
-        2Echos No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
+        2PrintSmart No \b:var detected °° calling: °° « \s:UserMenu_InitBufAdd() » …
         call s:UserMenu_InitBufAdd()
         return 0
     endif
@@ -373,7 +373,7 @@ function! s:UserMenu_KeyFilter(id,key)
     let s:key = a:key
     if s:way == 'c' | call add(s:timers, timer_start(250, function("s:redraw"))) | endif
     if s:tryb == 'should-initialize'
-        3Echos s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
+        3PrintSmart s:way ←←← s:key →→→ «INIT-path» °°° user_menu_init_cmd_mode ←·→
                     \ s:tryb °°° \s:way ←·→ s:way °°° \a:key ←·→ s:key
         call s:UserMenu_BufOrSesVarSet("user_menu_init_cmd_mode", '')
         " Consume (still somewhat conditionally ↔ depending on the filter)
@@ -395,7 +395,7 @@ function! s:UserMenu_KeyFilter(id,key)
 
         let s:main_skip_count -= s:main_skip_count > 0 ? 1 : 0
         let s:result = popup_filter_menu(a:id, s:key)
-        3Echos s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
+        3PrintSmart s:way ←←← s:key →→→ filtering-path °°° user_menu_init_cmd_mode
                     \ s:tryb °°° ret ((s:way=='c') ? '~forced-1'.s:result : s:result) °°°
         return s:result
     endif
@@ -416,7 +416,7 @@ function! s:UserMenu_DeployDeferred_TimerTriggered_Message(dict,key,...)
                 if type(s:msg) == 3
                     call s:msg(10, s:msg)
                 else
-                    10Echos s:msg
+                    10PrintSmart s:msg
                 endif
                 redraw
             endif
@@ -574,7 +574,7 @@ endfunc
 " FUNCTION: s:redraw(timer) {{{
 function! s:redraw(timer)
     call filter( s:timers, 'v:val != a:timer' )
-    6Echos △ redraw called △
+    6PrintSmart △ redraw called △
     redraw
 endfunc
 " }}}
@@ -587,7 +587,7 @@ function! s:deferredMenuReStart(timer)
     call s:UserMenu_Start(s:way == 'c' ? 'c2' : s:way)
     if s:way !~ '\v^c.*'
         let l:state_to_desc = { 'n':'Normal', 'i':'Insert', 'v':'Visual', 'o':'o' }
-        7Echos %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
+        7PrintSmart %lyellow3.Opened again the menu in l:state_to_desc[s:way] mode.
     endif
     redraw
 endfunc
@@ -598,7 +598,7 @@ function! s:deferredMessageShow(timer)
     if type(s:msgs[s:msg_idx]) == 3
         call s:msg(10,s:msgs[s:msg_idx])
     else
-        10Echos s:msgs[s:msg_idx]
+        10PrintSmart s:msgs[s:msg_idx]
     endif
     let s:msg_idx += 1
     redraw
@@ -635,7 +635,7 @@ function! s:UserMenu_BufOrSesVar(var_to_read,...)
     elseif exists("b:" . a:var_to_read)
         return get( b:, a:var_to_read, a:0 ? a:1 : '' )
     else
-        6Echos ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
+        6PrintSmart ·• Warning «Get…» •· →→ non-existent parameter given: ° s:tmp °
         return a:0 ? a:1 : ''
     endif
 endfunc
@@ -664,7 +664,7 @@ function! s:UserMenu_BufOrSesVarSet(var_to_set, value_to_set)
             let b:[a:var_to_set] = a:value_to_set
             return 1
         else
-            6Echos ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
+            6PrintSmart ·• Warning «Set…» •· →→ non-existent parameter given: ° s:tmp °
             let b:[a:var_to_set] = a:value_to_set
             if exists("b:" . a:var_to_set)
                 let b:[a:var_to_set] = a:value_to_set
@@ -872,8 +872,8 @@ cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
 " Following doesn't work as expected…
 onoremap <expr> <F12> UserMenu_Start("o")
 
-" Echos — echo-smart command.
-command! -nargs=+ -count=4 -bang -bar -complete=var Echos call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
+" PrintSmart — echo-smart command.
+command! -nargs=+ -count=4 -bang -bar -complete=expression PrintSmart call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
             \ map([<f-args>], 's:evalArg(exists("l:")?(l:):{},exists("a:")?(a:):{},v:val)' ))
 
 " Messages command.
@@ -1026,8 +1026,8 @@ function! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
         vunmap <ESC>
     endif
     if a:inactive
-        5Echos The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
-        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        5PrintSmart The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
+        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return "\<ESC>"
     else
         return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
@@ -1082,17 +1082,17 @@ function! s:UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
 
     let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\++\=\s*"\([^"]\+\)"\s\+.*' )
     if empty(s:mres)
-        7Echos! p:0.5:%0Error: Couldn't parse the buffer listing.
+        7PrintSmart! p:0.5:%0Error: Couldn't parse the buffer listing.
         return
     else
         exe "buf" s:mres[1]
-        7Echos! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
+        7PrintSmart! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
     endif
 endfunc
 " }}}
@@ -1157,7 +1157,7 @@ function! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     endif
     " Exit if cancelled.
     if !s:got_it
-        7Echos! p:0.5:%lbgreen2.The operation has been correctly canceled.
+        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
         return
     endif
 
@@ -1176,19 +1176,19 @@ function! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
     let s:mres = empty(s:mres) ? ["","",""] : s:mres
 
     if string(s:j) != s:mres[1] && string(-s:j) != s:mres[1]
-      8Echos WARNING: Got contradict results for the jump-distance: ((s:j).' vs. '.s:mres[1])
+      8PrintSmart WARNING: Got contradict results for the jump-distance: ((s:j).' vs. '.s:mres[1])
     endif
 
     if s:j < 0
       let s:j = s:mres[1]
       execute "normal " . s:j . "\<c-o>"
-      7Echos! p:0.2:%bluemsg.Jumped %0.(-s:j)%bluemsg. positions back \(^O) to: ('«'.s:mres[2].'».')
+      7PrintSmart! p:0.2:%bluemsg.Jumped %0.(-s:j)%bluemsg. positions back \(^O) to: ('«'.s:mres[2].'».')
     elseif s:j > 0
         let s:j = s:mres[1]
         execute "normal " . s:j . "\<c-i>"
-        7Echos! p:0.2:%bluemsg.Jumped %0.s:j%bluemsg. positions forward \(Tab) to: ('«'.s:mres[2].'».')
+        7PrintSmart! p:0.2:%bluemsg.Jumped %0.s:j%bluemsg. positions forward \(Tab) to: ('«'.s:mres[2].'».')
     else
-        7Echos! p:0.5:%bluemsg.Already at the position.
+        7PrintSmart! p:0.5:%bluemsg.Already at the position.
     endif
 endfunc
 " }}}
@@ -1231,7 +1231,7 @@ function! s:UserMenu_JLKeyFilter(id,key)
     endif
 
     let s:popdata = popup_getpos(s:jlpid)
-    2Echos → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
+    2PrintSmart → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
                 \ →→→ 1st-line: (!empty(s:popdata) ? s:popdata.firstline : -1) ←←←
     let s:result = popup_filter_menu(a:id, s:key)
     if changed > 0 && s:jl_to_use > 0
@@ -1258,7 +1258,7 @@ function! s:UserMenu_JLKeyFilter(id,key)
         if s:last_jl_first_line == s:popdata.firstline &&
                     \ (s:popdata.firstline > 1 && s:popdata.firstline <
                     \ (len(s:current_jump_list) - s:jl_list_height + 1))
-            1Echos SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
+            1PrintSmart SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
                         \ 'fl'→ s:popdata.firstline °°
                         \ \s:current_jump_list_idx ↔ s:current_jump_list_idx °°
                         \ \changed ↔ l:changed °° \len(s:current_jump_list)
@@ -1282,7 +1282,7 @@ function! s:UserMenu_JLKeyFilter(id,key)
         let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
         let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
 
-        2Echos \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2][-20:] /// % ↔ expand('%')
+        2PrintSmart \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2][-20:] /// % ↔ expand('%')
         " The matched :jumps-string looks like a (typical) buffer's text?
         " If yes, then compare % for the file-name change, otherwise compare
         " the matched string ↔ a file name.
@@ -1294,16 +1294,16 @@ function! s:UserMenu_JLKeyFilter(id,key)
             "let optbkp = &foldenable
             "set nofoldenable
             if !readable
-                3Echos Expanding % expand('%') // s:mres[2]
+                3PrintSmart Expanding % expand('%') // s:mres[2]
                 if !empty(expand("%"))
                     exe "pedit" "%"
                 endif
             else
-                3Echos Editing NEW with: pedit → s:mres[2]
+                3PrintSmart Editing NEW with: pedit → s:mres[2]
                 exe "pedit" s:mres[2]
             endif
         else
-            4Echos ≈≈ UNCHANGED ≈≈
+            4PrintSmart ≈≈ UNCHANGED ≈≈
         endif
         let pid = popup_findpreview()
         if pid
@@ -1329,7 +1329,7 @@ function! UserMenu_ProvidedKitFuns_TakeOutBuf()
   " The •OLD-WINDOW• found?
   let found_wid = win_getid()
   if !found_wid
-      7Echos! %0ERROR:%1 Couldn't find the current window-ID, aborting…
+      7PrintSmart! %0ERROR:%1 Couldn't find the current window-ID, aborting…
       return
   endif
 
@@ -1338,15 +1338,15 @@ function! UserMenu_ProvidedKitFuns_TakeOutBuf()
   let new_winid = win_getid()
   exe "buf" bufnr
   if !win_gotoid(found_wid)
-      8Echos! %1WARNING: Closing of the old window unsuccessful.
+      8PrintSmart! %1WARNING: Closing of the old window unsuccessful.
       return
   endif
   hide
   if !win_gotoid(new_winid)
-      8Echos! %1WARNING: Couldn't switch to the new tab \(afer successfully closing the old window).
+      8PrintSmart! %1WARNING: Couldn't switch to the new tab \(afer successfully closing the old window).
       return
   endif
-  7Echos! %bluemsg.The buffer %0.l:bufnr%bluemsg. has been moved to a «NEW» tab.
+  7PrintSmart! %bluemsg.The buffer %0.l:bufnr%bluemsg. has been moved to a «NEW» tab.
 endfunc
 " }}}
 
