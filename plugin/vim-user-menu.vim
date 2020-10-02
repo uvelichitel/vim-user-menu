@@ -5,12 +5,12 @@
 " Example user-menu «list» of «dictionaries» (note: the #{ … } syntax is a
 " Dictionary that allows no quoting on keys — it's unavailable in Neovim):
 "
-" let g:user_menu = [
-"     \ [ "Reload",      #{ type: "cmds", body: ":edit!" } ],
-"     \ [ "Quit Vim",    #{ type: "cmds", body: ":qa!" } ],
-"     \ [ "New Window",  #{ type: "keys", body: "\<C-w>n" } ],
-"     \ [ "Load passwd", #{ type: "expr", body: "LoadPasswd()" } ]
-" \ ]
+ let g:user_menu_default = [
+     \ [ "Reload",      #{ type: "cmds", body: ":edit!" } ],
+     \ [ "Quit Vim",    #{ type: "cmds", body: ":qa!" } ],
+     \ [ "New Window",  #{ type: "keys", body: "\<C-w>n" } ],
+     \ [ "Load passwd", #{ type: "expr", body: "LoadPasswd()" } ]
+ \ ]
 "
 " The "syntax" of the user-menu «list» of «dictionaries» is:
 " [
@@ -94,11 +94,11 @@ function! s:UserMenu_Start(way)
 
     call s:UserMenu_EnsureInit()
 
-    let l:state_to_desc = { 'n':'%2Normal%lblue3.', 'c':'%2Command Line%lblue3.',
-                \ 'i':'%2Insert%lblue3.', 'v':'%2Visual%lblue3.', 'o':'%2o%lblue3.' }
+    let l:state_to_desc = { 'n':'Normal.', 'c':'Command Line.',
+                \ 'i':'Insert.', 'v':'Visual.', 'o':'o.' }
     let l:state_to_desc['c2'] = l:state_to_desc['c']
     if s:way !~ '\v^c2=$'
-        PrintSmart 9 %lblue3.User Menu started in l:state_to_desc[s:way] mode.
+        PrintSmart 9 %lblue3.User Menu started in %2l:state_to_desc[s:way]%lblue3. mode.
     elseif s:way =~ '\v^c2=$'
         " Special actions needed for command-line state.
         if s:way == 'c'
@@ -124,34 +124,7 @@ function! s:UserMenu_Start(way)
 
     " The source of the menu…
     let menu = deepcopy(get(g:,'user_menu', g:user_menu_default))
-    let idx = 0
-    for mitem in menu
-        if type(mitem) == 1 && mitem =~ '^KIT:'
-            let menu[idx] = deepcopy(g:user_menu_kit[mitem])
-        " let g:user_menu = [ ["custom-name", "KIT:…", #{opts:'…'} ], … ]
-        elseif type(mitem) == 3 && mitem[1] =~ '^KIT:' && len(mitem) == 3 && type(mitem[2]) == 4
-            let menu[idx] = [ mitem[0], deepcopy(g:user_menu_kit[mitem[1]][1]) ]
-            let menu[idx][1]['opts'] = deepcopy(mitem[2]['opts'])
-        " let g:user_menu = [ ["custom-name", "KIT:…" ], … ]
-        elseif type(mitem) == 3 && mitem[1] =~ '^KIT:'
-            let menu[idx] = [ mitem[0], deepcopy(g:user_menu_kit[mitem[1]][1]) ]
-        " let g:user_menu = [ #{ kit:"…", name:"…", opts:'…' }, … ]
-        elseif type(mitem) == 4
-            if !has_key(mitem, 'kit')
-                7PrintSmart p:2:Error: The \g:user_menu entry doesn't have the 'kit' key in the dictionary.
-                continue
-            endif
-            if mitem['kit'] !~ '^KIT:'
-                let mitem['kit'] = 'KIT:'.mitem['kit']
-            endif
-            let menu[idx] = [ has_key(mitem, 'name') ? mitem['name'] : deepcopy(g:user_menu_kit[mitem['kit'][0]]),
-                        \ deepcopy(g:user_menu_kit[mitem['kit']][1]) ]
-            if has_key(mitem, 'opts')
-                let menu[idx][1]['opts'] = mitem['opts']
-            endif
-        endif
-        let idx += 1
-    endfor
+
     " … and the temporary (it'll exist till the selection), built effect of it.
     if ! exists("s:current_menu")
         let s:current_menu = {}
@@ -231,7 +204,7 @@ function! s:UserMenu_Start(way)
         \ 'thumbhighlight': 'UMPmenuTH',
         \ 'cursorline': 1,
         \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-        \ 'padding': [ 1, 1, 1, 1 ] }
+        \ 'padding': [ 0, 0, 0, 0 ] }
 
     if exists('*popup_menu')
         " Vim
@@ -865,12 +838,12 @@ augroup UserMenu_InitGroup
 augroup END
 
 exe "set previewpopup=height:".(&lines/2).",width:".(&columns/2-10)
-inoremap <expr> <F12> UserMenu_Start("i")
-nnoremap <expr> <F12> UserMenu_Start("n")
-vnoremap <expr> <F12> UserMenu_Start("v")
-cnoremap <F12> <C-\>eUserMenu_Start("c")<CR>
+inoremap <expr> <F2> UserMenu_Start("i")
+nnoremap <expr> <F2> UserMenu_Start("n")
+vnoremap <expr> <F2> UserMenu_Start("v")
+cnoremap <F2> <C-\>eUserMenu_Start("c")<CR>
 " Following doesn't work as expected…
-onoremap <expr> <F12> UserMenu_Start("o")
+onoremap <expr> <F2> UserMenu_Start("o")
 
 " PrintSmart — echo-smart command.
 command! -nargs=+ -count=4 -bang -bar -complete=expression PrintSmart call s:msgcmdimpl(<count>,<q-bang>,expand("<sflnum>"),
@@ -881,8 +854,6 @@ command! -nargs=? Messages call Messages(<q-args>)
 
 " Menu command.
 command! Menu call UserMenu_Start("n")
-command! MenuBL call UserMenu_ProvidedKitFuns_BufferSelectionPopup()
-command! MenuJL call UserMenu_ProvidedKitFuns_JumpSelectionPopup()
 
 " Common highlight definitions.
 hi! um_norm ctermfg=7
@@ -927,431 +898,4 @@ let s:main_skip_count = 0
 let g:messages = []
 let s:Messages_state = 0
 
-" The default, provided menu.
-let g:user_menu_default = [ "KIT:buf-take-out", "KIT:buffers", "KIT:jumps", "KIT:open", "KIT:save",
-            \ "KIT:save-all-quit", "KIT:toggle-vichord-mode", "KIT:toggle-auto-popmenu",
-            \ "KIT:new-win", "KIT:visual-to-subst-escaped", "KIT:visual-yank-to-subst-escaped",
-            \ "KIT:capitalize", "KIT:escape-cmd-line" ]
 
-let g:user_menu_kit = {
-            \ "KIT:buf-take-out" : [ "° Take-Out «buffer» —→ new tab…",
-                    \ { 'show-if': '(len(gettabinfo(tabpagenr())[0].windows) >= 2)',
-                            \ 'type': 'expr', 'body': 'UserMenu_ProvidedKitFuns_TakeOutBuf()',
-                            \ 'opts': [] } ],
-            \ "KIT:buffers" : [ "° BUFFER «LIST» …",
-                    \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_BufferSelectionPopup()",
-                            \ 'opts': [] } ],
-            \ "KIT:jumps" : [ "° JUMP «LIST» …",
-                    \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_JumpSelectionPopup()",
-                            \ 'opts': [] } ],
-            \ "KIT:open" : [ "° Open …",
-                        \ { 'type': 'cmds', 'body': ':Ex', 'opts': "in-normal",
-                            \ 'smessage': "p:2:%lblue2.Launching file explorer… %gold.In 2 seconds…",
-                            \ 'message': "p:1:%gold.Explorer started correctly."} ],
-            \ "KIT:save" : [ "° Save current buffer",
-                       \ { 'type': 'cmds', 'body': ':if !empty(expand("%")) && !&ro | w | endif',
-                            \ 'smessage':'p:2:%1{:let g:_sr = "" | if empty(expand("%")) | let
-                                \ g:_m = "No filename for this buffer." | elseif &ro | let g:_m
-                                    \ = "Readonly buffer." | else | let [g:_m,g:_sr] = ["","File
-                                    \ saved under: %lblue3." . expand("%")] | endif }
-                                \{g:_m}',
-                            \ 'opts': "in-normal", 'message': "p:1:%2{g:_sr}" } ],
-            \ "KIT:save-all-quit" :[ "° Save all & Quit",
-                       \ { 'type': 'cmds', 'body': ':q', 'smessage': "p:2.5:%lblue2.Quitting Vim
-                           \… %2{:bufdo if !empty(expand('%')) && !&ro | w | else | if ! &ro |
-                               \ w! .unnamed.txt | endif | endif}All buffers %lgreen3.saved%2,
-                               \ current file modified: %bluemsg.{&modified}%2..",
-                           \ 'opts': "in-normal" } ],
-            \ "KIT:toggle-vichord-mode" :[ "° Toggle completion-mode ≈ {g:vichord_search_in_let} ≈ ",
-                        \ { 'show-if': "exists('g:vichord_omni_completion_loaded')",
-                            \ 'type': 'expr', 'body': 'extend(g:, { ''vichord_search_in_let'':
-                            \ !get(g:,"vichord_search_in_let",0) })', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:%lblue2.The new state: %lgreen3.{g:vichord_search_in_let}%lblue2.." } ],
-            \ "KIT:toggle-auto-popmenu" :[ "° Toggle Auto-Popmenu Plugin ≈ {::echo get(b:,'apc_enable',0)} ≈ ",
-                        \ { 'show-if': "exists('g:apc_loaded')",
-                            \ 'type': 'cmds', 'body': 'if get(b:,"apc_enable",0) | ApcDisable |
-                                \ else | ApcEnable | endif', 'opts': "keep-menu-open",
-                            \ 'message': "p:1:%lblue2.The new state: %lgreen3.{b:apc_enable}%lblue2.." } ],
-            \ "KIT:new-win" :[ "° New buffer",
-                        \ { 'type': 'norm', 'body': "\<C-W>n", 'opts': "in-normal",
-                            \ 'message': "p:1:%3New buffer created."} ],
-            \ "KIT:visual-to-subst-escaped" :[ "° The «visual-selection» in s/…/…/g escaped",
-                        \ { 'type': 'keys', 'body': "y:let @@ = substitute(escape(@@,'/\\'),
-                            \ '\\n','\\\\n','g')\<CR>:%s/\\V\<C-R>\"/", 'opts': "in-visual",
-                            \ 'message':"p:1.5:%3The selection has been escaped. Here's the %2s/…/…/g%3 command with it:"} ],
-            \ "KIT:visual-yank-to-subst-escaped" :[ "° «Visual» yank in s/…/…/g escaped …",
-                        \ { 'type': 'expr', 'body': "UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()",
-                            \ 'opts': "in-normal",
-                            \ 'smessage':"p:1.5:%3Select some text and %2YANK%3 to get it to %2:s/…/…/g"} ],
-            \ "KIT:capitalize" :[ "° Upcase _front_ letters in the «selected» words",
-                        \ { 'type': 'norm!', 'body': ':s/\%V\v\w+/\L\u\0/g'."\<CR>",
-                            \ 'opts': "in-visual",
-                            \ 'message':"p:1:%3All selected %2FRONT%3 letters of %2WORDS%3 are now upcase."} ],
-            \ "KIT:escape-cmd-line" :[ "° Escape the «command-line»",
-                        \ { 'type': 'keys', 'body': "\<C-bslash>esubstitute(escape(getcmdline(), ' \'),
-                                \'\\n','\\\\n','g')\<CR>",
-                            \ 'opts': ['in-ex'] } ]
-            \ }
-
-"""""""""""""""""" THE END OF THE SCRIPT BODY }}}
-
-"""""""""""""""""" IN-MENU USE FUNCTIONS (THE PROVIDED-KIT FUNCTIONS) {{{
-
-" FUNCTION: UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst() {{{
-function! UserMenu_ProvidedKitFuns_StartSelectYankEscapeSubst()
-    let s:y = maparg("y", "v")
-    let s:v = maparg("v", "v")
-    let s:esc = maparg("\<ESC>", "v")
-    vnoremap y y:<C-R>=UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,0)<CR>
-    vnoremap v <ESC>v
-    vnoremap <expr> <ESC> UserMenu_ProvidedKitFuns_EscapeYRegForSubst(@@,1)
-    call feedkeys("v")
-endfunc
-" }}}
-" FUNCTION: UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive) {{{
-function! UserMenu_ProvidedKitFuns_EscapeYRegForSubst(sel,inactive)
-    if !empty(s:y)
-        exe 'vnoremap y ' . s:y
-    else
-        vunmap y
-    endif
-    if !empty(s:v)
-        exe 'vnoremap v ' . s:v
-    else
-        vunmap v
-    endif
-    if !empty(s:esc)
-        exe 'vnoremap <ESC> ' . s:esc
-    else
-        vunmap <ESC>
-    endif
-    if a:inactive
-        5PrintSmart The ESC-mapping was restored to \(empty ↔ no mapping): °° ('»'.maparg('<ESC>','v').'«') °°
-        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
-        return "\<ESC>"
-    else
-        return '%s/\V'.substitute(escape(a:sel,"/\\"),'\n','\\n','g').'/'
-    endif
-endfunc
-" }}}
-
-" FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionPopup() {{{
-function! UserMenu_ProvidedKitFuns_BufferSelectionPopup()
-    hi! UMPmenuBL ctermfg=82 ctermbg=darkblue
-    hi! UMPmenuBLSB ctermfg=82 ctermbg=darkblue
-    hi! UMPmenuBLTH ctermfg=82 ctermbg=darkblue
-    hi! PopupSelected ctermfg=17 ctermbg=82
-    hi! PmenuSel ctermfg=17 ctermbg=82
-
-    let s:current_buffer_list = split(execute('filter! /\[Popup\]/ ls!'),"\n")
-
-    call popup_menu(s:current_buffer_list, {
-                \ 'callback':'UserMenu_ProvidedKitFuns_BufferSelectionCallback',
-                \ 'time': 30000,
-                \ 'mapping': 0,
-                \ 'border': [ ],
-                \ 'fixed': 1,
-                \ 'wrap': 0,
-                \ 'maxheight': &lines-4,
-                \ 'maxwidth': &columns-20,
-                \ 'flip': 1,
-                \ 'title': ' VIM User Menu ≈ Select The Buffer To Switch To: ≈ ',
-                \ 'drag': 1,
-                \ 'resize': 1,
-                \ 'close': 'button',
-                \ 'highlight': 'UMPmenuBL',
-                \ 'scrollbar': 1,
-                \ 'scrollbarhighlight': 'UMPmenuBLSB',
-                \ 'thumbhighlight': 'UMPmenuBLTH',
-                \ 'cursorline': 1,
-                \ 'borderhighlight': [ 'um_green4', 'um_green4', 'um_green4', 'um_green4' ],
-                \ 'padding': [ 2, 2, 2, 2 ] } )
-endfunc
-" }}}
-" FUNCTION: UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
-function! UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
-    call s:UserMenu_ProvidedKitFuns_BufferSelectionCallback(a:id, a:result)
-endfunc
-" }}}
-" FUNCTION: s:UserMenu_ProvidedKitFuns_BufferSelectionCallback() {{{
-function! s:UserMenu_ProvidedKitFuns_BufferSelectionCallback(id, result)
-    " Selected or cancelled?
-    let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
-    if s:result > 0 && s:result <= len(s:current_buffer_list)
-        let [s:item,s:got_it] = [s:current_buffer_list[s:result - 1], 1]
-    endif
-    " Exit if cancelled.
-    if !s:got_it
-        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
-        return
-    endif
-
-    let s:mres = matchlist( s:item,'^\s*\(\d\+\)u\=\s*\%([^[:space:]]\+\)\=\s\++\=\s*"\([^"]\+\)"\s\+.*' )
-    if empty(s:mres)
-        7PrintSmart! p:0.5:%0Error: Couldn't parse the buffer listing.
-        return
-    else
-        exe "buf" s:mres[1]
-        7PrintSmart! p:0.5:%bluemsg.Switched to the buffer: ('«'.s:mres[2].'»')
-    endif
-endfunc
-" }}}
-
-" FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionPopup() {{{
-function! UserMenu_ProvidedKitFuns_JumpSelectionPopup()
-    hi! UMPmenuJL ctermfg=lightyellow ctermbg=22
-    hi! UMPmenuJLSB ctermfg=51 ctermbg=darkblue
-    hi! UMPmenuJLTH ctermfg=51 ctermbg=darkblue
-    hi! PopupSelected ctermfg=17 ctermbg=82
-    hi! PmenuSel ctermfg=17 ctermbg=82
-
-    let s:jl_to_use = -13371337
-    let s:current_jump_list = split(substitute(execute('jumps'),'  \(\d\)',' \1','g'),"\n")[1:]
-    let s:current_jump_list_idx = 0
-    if &columns/2 >= 40
-        let s:jl_line=5
-        let s:jl_col=3
-        let s:jl_maxwidth=(&columns/2-10)
-        let s:jl_maxheight=&lines-15
-    else
-        let s:jl_line=2
-        let s:jl_col=1
-        let s:jl_maxwidth=max([&columns-35,20])
-        let s:jl_maxheight=&lines-7
-    endif
-    let s:last_pedit_file = ""
-    let s:jlpid = popup_menu(s:current_jump_list, {
-                \ 'callback':'UserMenu_ProvidedKitFuns_JumpSelectionCallback',
-                \ 'line': s:jl_line,
-                \ 'col': s:jl_col,
-                \ 'pos': 'topleft',
-                \ 'filter': 'UserMenu_JLKeyFilter',
-                \ 'time': 300000,
-                \ 'mapping': 0,
-                \ 'border': [ ],
-                \ 'fixed': 1,
-                \ 'wrap': 0,
-                \ 'maxheight': s:jl_maxheight,
-                \ 'maxwidth': s:jl_maxwidth,
-                \ 'flip': 0,
-                \ 'title': ' VIM User Menu ≈ Select The Position To Jump To: ≈ ',
-                \ 'drag': 1,
-                \ 'resize': 0,
-                \ 'close': 'button',
-                \ 'highlight': 'UMPmenuJL',
-                \ 'scrollbar': 1,
-                \ 'scrollbarhighlight': 'UMPmenuJLSB',
-                \ 'thumbhighlight': 'UMPmenuJLTH',
-                \ 'cursorline': 1,
-                \ 'borderhighlight': [ 'um_gold', 'um_gold', 'um_gold', 'um_gold' ],
-                \ 'padding': (&columns < 80 ? [1,1,1,1]:[2,2,2,2])})
-endfunc
-" }}}
-" FUNCTION: UserMenu_ProvidedKitFuns_JumpSelectionCallback() {{{
-function! UserMenu_ProvidedKitFuns_JumpSelectionCallback(id, result)
-    call add( s:timers, timer_start(1000, function("s:closePreviewPopup")) )
-    " Selected or cancelled?
-    let [s:item,s:got_it,s:result] = [ "", 0, a:result ]
-    if s:result > 0 && s:result <= len(s:current_jump_list)
-        let [s:item,s:got_it] = [s:current_jump_list[s:result - 1], 1]
-    endif
-    " Exit if cancelled.
-    if !s:got_it
-        7PrintSmart! p:0.5:%lbgreen2.The operation has been correctly canceled.
-        return
-    endif
-
-    let s:curjump = -1
-    " 1-based ↔ adapted to a:result
-    let idx = 1
-    for jump in s:current_jump_list
-        if jump =~ '^\s*>.*$'
-            let s:curjump = idx
-            break
-        endif
-        let idx += 1
-    endfor
-    let s:j = s:result - s:curjump
-    let s:mres = matchlist( s:item,'^\s*\(\d\+\)\s\+\%(\d\+\s\+\)\{2}\(.*\)$' )
-    let s:mres = empty(s:mres) ? ["","",""] : s:mres
-
-    if string(s:j) != s:mres[1] && string(-s:j) != s:mres[1]
-      8PrintSmart WARNING: Got contradict results for the jump-distance: ((s:j).' vs. '.s:mres[1])
-    endif
-
-    if s:j < 0
-      let s:j = s:mres[1]
-      execute "normal " . s:j . "\<c-o>"
-      7PrintSmart! p:0.2:%bluemsg.Jumped %0.(-s:j)%bluemsg. positions back \(^O) to: ('«'.s:mres[2].'».')
-    elseif s:j > 0
-        let s:j = s:mres[1]
-        execute "normal " . s:j . "\<c-i>"
-        7PrintSmart! p:0.2:%bluemsg.Jumped %0.s:j%bluemsg. positions forward \(Tab) to: ('«'.s:mres[2].'».')
-    else
-        7PrintSmart! p:0.5:%bluemsg.Already at the position.
-    endif
-endfunc
-" }}}
-" FUNCTION: UserMenu_JLKeyFilter() {{{
-function! UserMenu_JLKeyFilter(id,key)
-    call s:UserMenu_JLKeyFilter(a:id,a:key)
-endfunc
-" }}}
-" FUNCTION: s:UserMenu_JLKeyFilter() {{{
-function! s:UserMenu_JLKeyFilter(id,key)
-    redraw
-    let s:key = a:key
-
-    " Handle the keys.
-    let changed = 0
-    if execute(['let i=index(["k","\<Up>","\<C-E>","\<C-P>"], s:key)', 'echon i']) >= 0
-        let s:current_jump_list_idx = s:current_jump_list_idx <= 0 ?
-                    \ 0 : s:current_jump_list_idx-1
-        let changed = -1
-        let s:key = 'k' 
-    elseif execute(['let i=index(["j","\<Down>","\<C-Y>","\<C-N>"], s:key)', 'echon i']) >= 0
-        let s:current_jump_list_idx = s:current_jump_list_idx >=
-                    \ (len(s:current_jump_list)-1) ?
-                    \ (len(s:current_jump_list)-1) : s:current_jump_list_idx+1
-        let changed = 1
-        let s:key = 'j' 
-    elseif execute(['let i=index(["\<C-U>","g"],s:key)','echon i']) >= 0
-        call feedkeys("kkkkkkk" . (i ? "kkkkkkkkkkkkkkkkkkkkkkkkkkkk" : ""),"n")
-        let s:jl_skip_count = 1 + 7 + (i ? 28 : 0)
-    elseif execute(['let i=index(["\<C-D>","G"],s:key)','echon i']) >= 0
-        call feedkeys("jjjjjjj" . (i ? "jjjjjjjjjjjjjjjjjjjjjjjjjjjj" : ""),"n")
-        let s:jl_skip_count = 1 + 7 + (i ? 28 : 0)
-    endif
-
-    " Quick fetch/establish of the to-use variable…:
-    if s:jl_to_use == -13371337
-        let s:jl_to_use = popup_getpos(s:jlpid)['core_height']
-        " Initialize also this constant – the size of the list.
-        let s:jl_list_height = s:jl_to_use
-    endif
-
-    let s:popdata = popup_getpos(s:jlpid)
-    2PrintSmart → IDX: s:current_jump_list_idx ← →→ s:jl_to_use ←←
-                \ →→→ 1st-line: (!empty(s:popdata) ? s:popdata.firstline : -1) ←←←
-    let s:result = popup_filter_menu(a:id, s:key)
-    if changed > 0 && s:jl_to_use > 0
-        let s:jl_to_use -= changed
-    elseif changed < 0 && s:jl_to_use < s:jl_list_height
-        let s:jl_to_use -= changed
-    elseif (changed > 0 && s:jl_to_use <= 0) ||
-                \ (changed < 0 && s:jl_to_use >= s:jl_list_height)
-        " An improper situation (Vim bug, especially in case of a :redraw call
-        " — that's now avoided): we've moved through enough items for a scroll
-        " to occur, but it doesn't happen (↔ the getpos-field: 'firstline' —
-        " remains unchanged).
-        "
-        " A +1 is needed for the 1 based 'firstline' index, as shown below (the
-        " arrows denote the viewport of the list — it's scrolled to the bottom;
-        " as it can be seen, 'firstline' will be '2' in such case, so +1 is
-        " needed to the total_len-list_height subtraction…
-        "    1
-        "    2 <--|
-        "    3 <--/
-        "
-        " The improper situation is only when the list isn't scrolled to any
-        " boundary, i.e.: f.line > 1 and f.line < tot.l. - l.heig. + 1.
-        if s:last_jl_first_line == s:popdata.firstline &&
-                    \ (s:popdata.firstline > 1 && s:popdata.firstline <
-                    \ (len(s:current_jump_list) - s:jl_list_height + 1))
-            1PrintSmart SCROLL-ISSUE OCCURRED, last→ s:last_jl_first_line ≈≈
-                        \ 'fl'→ s:popdata.firstline °°
-                        \ \s:current_jump_list_idx ↔ s:current_jump_list_idx °°
-                        \ \changed ↔ l:changed °° \len(s:current_jump_list)
-                        \ len(s:current_jump_list)
-                        \ °° RECENT 'fl' ↔ (popup_getpos(s:jlpid)['firstline'])
-            " Withdrawal the index change:
-            " Commented out, as another Vim bug overlays on the previous one:
-            " lack of update of 'firstline' after a successful scroll up.
-            "let s:current_jump_list_idx -= changed
-            " Deactivate the preview popup:
-            "let changed = 0
-        endif
-    endif
-
-    let s:last_jl_first_line = !empty(s:popdata) ? s:popdata.firstline : 1
-
-    let s:jl_skip_count -= s:jl_skip_count > 0 ? 1 : 0
-    if changed && s:jl_skip_count <= 0
-        " Match the final column(s) of the :jumps listing…
-        let s:item = s:current_jump_list[s:current_jump_list_idx]
-        let s:mres = matchlist( s:item,'^\s*\%(>\s*\)\=\d\+\s\+\(\d\+\)\s\+\d\+\s\+\(.*\)$' )
-        let s:mres = empty(s:mres) ? ["","1", ""] : s:mres
-
-        2PrintSmart \s:last_pedit_file ↔ s:last_pedit_file /// mres[2] ↔ s:mres[2][-20:] /// % ↔ expand('%')
-        " The matched :jumps-string looks like a (typical) buffer's text?
-        " If yes, then compare % for the file-name change, otherwise compare
-        " the matched string ↔ a file name.
-        let readable = !(empty(s:mres[2]) || !filereadable(expand(fnameescape(s:mres[2]))))
-        if (!readable) ?
-                    \ (s:last_pedit_file != expand('%')) :
-                    \ (s:last_pedit_file != s:mres[2])
-            let s:last_pedit_file = !readable ? expand("%") : s:mres[2]
-            "let optbkp = &foldenable
-            "set nofoldenable
-            if !readable
-                3PrintSmart Expanding % expand('%') // s:mres[2]
-                if !empty(expand("%"))
-                    exe "pedit" "%"
-                endif
-            else
-                3PrintSmart Editing NEW with: pedit → s:mres[2]
-                exe "pedit" s:mres[2]
-            endif
-        else
-            4PrintSmart ≈≈ UNCHANGED ≈≈
-        endif
-        let pid = popup_findpreview()
-        if pid
-            let ret = popup_setoptions(pid, {'firstline' : s:mres[1]})
-            call popup_move( pid, { 'line':s:jl_line, 'col': (s:jl_maxwidth+9),
-                        \ 'maxheight':&lines/2, 'maxwidth':&columns/2-10 } )
-            call win_execute( pid, 'norm! zR' )
-        endif
-    endif
-
-    return s:result
-endfunc " }}}
-
-" FUNCTION: UserMenu_ProvidedKitFuns_TakeOutBuf() {{{
-" Takes the current buffer — IF it's located in a split-window — and:
-" - creates new tab and loads the same buffer there,
-" - hides the split-window,
-" hence the "take-out" :)
-function! UserMenu_ProvidedKitFuns_TakeOutBuf()
-  set bh=hide
-  " The •BUFFER• to take-out.
-  let bufnr = bufnr()
-  " The •OLD-WINDOW• found?
-  let found_wid = win_getid()
-  if !found_wid
-      7PrintSmart! %0ERROR:%1 Couldn't find the current window-ID, aborting…
-      return
-  endif
-
-  " The actions: a) new tab, b) load the •BUFFER•, c) hide the •OLD-WINDOW•
-  tabnew
-  let new_winid = win_getid()
-  exe "buf" bufnr
-  if !win_gotoid(found_wid)
-      8PrintSmart! %1WARNING: Closing of the old window unsuccessful.
-      return
-  endif
-  hide
-  if !win_gotoid(new_winid)
-      8PrintSmart! %1WARNING: Couldn't switch to the new tab \(afer successfully closing the old window).
-      return
-  endif
-  7PrintSmart! %bluemsg.The buffer %0.l:bufnr%bluemsg. has been moved to a «NEW» tab.
-endfunc
-" }}}
-
-command! TakeOutBuf call UserMenu_ProvidedKitFuns_TakeOutBuf()
-    
-"""""""""""""""""" THE END OF THE IN-MENU USE FUNCTIONS }}}
-
-" vim:set ft=vim tw=80 foldmethod=marker sw=4 sts=4 et:
